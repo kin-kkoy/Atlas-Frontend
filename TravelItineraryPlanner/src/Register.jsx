@@ -1,34 +1,30 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 function Register() {
-
     const [name, setName] = useState();
     const [email, setEmail] = useState();
     const [password, setPassword] = useState();
+    const [message, setMessage] = useState(); // for messages
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        axios.post('http://localhost:5000/register', {name, email, password})
-        .then((result) => {
-            console.log(result);
-            console.log("worked"); // Just remove this later
-            navigate('/login'); // If you want to remove this, then remove it and also the import and const above.
-                                // Ngl it's kinda useless
-        })
-        .catch((err) => {
-            console.log(err);
-            console.log("didn't work"); // Just remove this later
-        });
-    }
+        try{
+            const response = await axios.post("http://localhost:5000/register", {name, email, password});
+            setMessage("Registered Successfully!");
+            navigate('/login');
+        } catch(err) {
+            setMessage("Registration failed");
+        }
+    };
 
     return(
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
             <div className="bg-white p-3 rounded w-25">
                 <h2>Register</h2>
+                {message && <div className="alert alert-danger">{message}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
                         <label htmlFor="email">

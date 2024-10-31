@@ -12,8 +12,16 @@ const EmployeeSchema = new mongoose.Schema({
     password: {
         type: String,
         required: true
+    },
+    resetToken: {
+        type: String,
+        default: null
+    },
+    resetTokenExpiry: {
+        type: Date,
+        default: null
     }
-})
+});
 
 const EmployeeModel = mongoose.model('employees', EmployeeSchema);
 module.exports = EmployeeModel;

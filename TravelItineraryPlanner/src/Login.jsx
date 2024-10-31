@@ -1,30 +1,33 @@
 import React from 'react';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 function Login() {
     const [email, setEmail] = useState();
     const [password, setPassword] = useState();
+    const [message, setMessage] = useState(); // for messages
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault()
-        axios.post("http://localhost:5000/login", { email, password })
-        .then(result => {
-            console.log(result)
-            if(result.data === "Login successful"){
-                navigate('/home')
+        try {
+            const response = await axios.post("http://localhost:5000/login", { email, password });
+            if (response.data === "Login successful") {
+                navigate('/home');
+            } else {
+                setMessage(response.data); // Set error or statsu message
             }
-        })
-        .catch(err => console.log(err))
+        } catch (err) {
+            setMessage("Login failed");
+        }
     }
 
     return (
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
             <div className="bg-white p-3 rounded w-25">
                 <h2>Login</h2>
+                {message && <div className="alert alert-danger">{message}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3">
                         <label htmlFor="email">
@@ -55,7 +58,11 @@ function Login() {
                         Login
                     </button>
                 </form>
-                <p> Dont have an Account?</p>
+                <p>
+                    Forgot Your Password? 
+                    <Link to="/forgot-password">Click here</Link>
+                </p>
+                <p>Dont have an Account?</p>
                 <Link to="/register" className="btn btn-default border w-100 bg-light rounded-0 text-decoration-none">
                     Register now
                 </Link>
