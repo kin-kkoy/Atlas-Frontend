@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const rateLimit = require('express-rate-limit');
 const EmployeeModel = require('./models/Employee');
 
 
@@ -11,6 +12,14 @@ app.use(cors());
 mongoose.connect('mongodb://localhost:27017/Employee');
 
 
+// Rate limiter for login
+const loginLimiter = rateLimit({
+    windowMs: 2 * 60 * 1000, // 2 minutes
+    max: 5, // 5 requests or chances to login correctly
+    message: { error: "You have exceeded the number of login attempts. Please try again in 2 minutes."} // Custom message in JSON format
+});
+
+
 // Register route
 app.post('/register', (req, res) => {
     EmployeeModel.create(req.body)
@@ -19,7 +28,7 @@ app.post('/register', (req, res) => {
 });
 
 // Login route
-app.post('/login', (req, res) => {
+app.post('/login', loginLimiter, (req, res) => {
     const {email, password} = req.body;
     EmployeeModel.findOne({email: email})
     .then(user => {
@@ -33,7 +42,9 @@ app.post('/login', (req, res) => {
             res.json("User has yet to exist");
         }
     })
+    .catch(err => res.status(400).json("Error: " + err));
 });
+
 
 app.listen(5000, () => {
     console.log('Server has started!');
