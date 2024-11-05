@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from './utils/axios';
 
 function Register() {
     const [name, setName] = useState();
@@ -13,7 +13,7 @@ function Register() {
         e.preventDefault();
         try {
             console.log('Sending registration data:', { name, email, password });
-            const response = await axios.post("http://localhost:5000/register", {
+            const response = await axiosInstance.post("/register", {
                 name, 
                 email, 
                 password

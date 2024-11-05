@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from './utils/axios';
 import { useNavigate } from 'react-router-dom';
 
 function ResetPassword() {
@@ -11,7 +11,7 @@ function ResetPassword() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('http://localhost:5000/reset-password', { email, resetToken, newPassword })
+        axiosInstance.post('http://localhost:5000/reset-password', { email, resetToken, newPassword })
             .then((response) => {
                 setMessage(response.data.message);
                 navigate('/login'); // Redirect after successful reset

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import axiosInstance from './utils/axios';
 import { Link, useNavigate } from 'react-router-dom';
 
 function ForgotPassword() {
@@ -9,7 +9,7 @@ function ForgotPassword() {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        axios.post('http://localhost:5000/forgot-password', { email })
+        axiosInstance.post('/forgot-password', { email })
             .then((response) => {
                 setMessage('Reset token sent! Redirecting to reset page...');
 
