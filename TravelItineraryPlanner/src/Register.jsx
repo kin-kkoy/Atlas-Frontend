@@ -11,11 +11,18 @@ function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        try{
-            const response = await axios.post("http://localhost:5000/register", {name, email, password});
+        try {
+            console.log('Sending registration data:', { name, email, password });
+            const response = await axios.post("http://localhost:5000/register", {
+                name, 
+                email, 
+                password
+            });
+            console.log('Registration response:', response.data);
             setMessage("Registered Successfully!");
             navigate('/login');
         } catch(err) {
+            console.error('Registration error:', err);
             setMessage("Registration failed");
         }
     };
