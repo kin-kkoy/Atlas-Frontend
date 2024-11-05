@@ -32,7 +32,7 @@ const employeeController = {
                 console.log('User not found:', email);
                 return res.status(404).json("User not found");
             }
-
+            //can comment this, this just for debugging and checking password 
             console.log('Found user:', user);
             console.log('Comparing passwords:');
             console.log('Input password:', password);
