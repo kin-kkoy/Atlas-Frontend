@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axiosInstance from './utils/axios';
 
 function Login() {
     const [email, setEmail] = useState();
@@ -12,17 +12,18 @@ function Login() {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            const response = await axios.post("http://localhost:5000/login", { email, password });
-            if (response.data === "Login successful") {
+            const response = await axiosInstance.post("/login", { email, password });
+            if (response.data.token) {
+                console.log('JWT Token:', response.data.token); // to check if token is received
+                localStorage.setItem('token', response.data.token);
                 navigate('/home');
             } else {
-                setMessage(response.data); // Set error or statsu message
+                setMessage(response.data.error);
             }
         } catch (err) {
-            setMessage("Login failed");
+            setMessage(err.response?.data?.error || "Login failed");
         }
     }
-
 
     return (
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
