@@ -1,21 +1,29 @@
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../config/jwt');
 const EmployeeModel = require('../models/Employee');
 
 const employeeController = {
     register: async (req, res) => {
         try {
-            console.log('Registration attempt:', req.body);
             const hashedPassword = await bcrypt.hash(req.body.password, 10);
-            console.log('Hashed password:', hashedPassword);
             
             const employee = await EmployeeModel.create({ 
                 name: req.body.name,
                 email: req.body.email,
                 password: hashedPassword 
             });
-            console.log('Created employee:', employee);
+
+            const token = jwt.sign(
+                { userId: employee._id, email: employee.email },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
             
-            res.status(201).json({ message: "Registered Successfully" });
+            res.status(201).json({ 
+                message: "Registered Successfully",
+                token: token
+            });
         } catch(err) {
             console.error('Registration error:', err);
             res.status(500).json({ error: "Registration failed" });
@@ -24,30 +32,35 @@ const employeeController = {
 
     login: async (req, res) => {
         try {
-            console.log('Login attempt:', req.body);
             const { email, password } = req.body;
             const user = await EmployeeModel.findOne({ email });
             
             if (!user) {
-                console.log('User not found:', email);
-                return res.status(404).json("User not found");
+                return res.status(404).json({ error: "User not found" });
             }
-            //can comment this, this just for debugging and checking password 
-            console.log('Found user:', user);
-            console.log('Comparing passwords:');
-            console.log('Input password:', password);
-            console.log('Stored hash:', user.password);
-            
+
             const isPasswordCorrect = await bcrypt.compare(password, user.password);
-            console.log('Password match result:', isPasswordCorrect);
 
             if (isPasswordCorrect) {
-                res.json("Login successful");
+                const token = jwt.sign(
+                    { userId: user._id, email: user.email },
+                    JWT_SECRET,
+                    { expiresIn: '24h' }
+                );
+                console.log('Generated token:', token); // pang check nako if token is generated
+                res.json({ 
+                    message: "Login successful", 
+                    token: token,
+                    user: {
+                        id: user._id,
+                        email: user.email,
+                        name: user.name
+                    }
+                });
             } else {
-                res.status(401).json("Password incorrect");
+                res.status(401).json({ error: "Password incorrect" });
             }
         } catch(err) {
-            console.error('Login error:', err);
             res.status(500).json({ error: "Login failed! " + err.message });
         }
     },
