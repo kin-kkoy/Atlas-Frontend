@@ -19,9 +19,16 @@ function Home() {
         navigate('/login');
     };
 
+    // To calendar boi
+    const handleCalendar = () => {
+        navigate('/calendar');
+    }
+
     return (
         <div>
-            <h1>Welcome to the Home Page</h1>
+            <h1>This the home page</h1>
+            <button onClick={handleCalendar}>Calendar</button>
+            <br /> <br />
             <button onClick={handleLogout}>Logout</button>
         </div>
     );
