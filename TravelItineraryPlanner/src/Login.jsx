@@ -15,7 +15,11 @@ function Login() {
             const response = await axiosInstance.post("/login", { email, password });
             if (response.data.token) {
                 console.log('JWT Token:', response.data.token); // to check if token is received
+                console.log('Calendar ID:', response.data.user.calendar._id); // to confirm calendarId
+
                 localStorage.setItem('token', response.data.token);
+                localStorage.setItem('calendarId', response.data.user.calendar._id);
+
                 navigate('/home');
             } else {
                 setMessage(response.data.error);
@@ -23,7 +27,7 @@ function Login() {
         } catch (err) {
             setMessage(err.response?.data?.error || "Login failed");
         }
-    }
+    };
 
     return (
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
@@ -45,7 +49,7 @@ function Login() {
                         />
                     </div>
                     <div className="mb-3">
-                        <label htmlFor="email">
+                        <label htmlFor="password">
                             <strong>Password</strong>
                         </label>
                         <input
