@@ -61,6 +61,28 @@ function Home() {
         }
     };
 
+    const handleDeleteEvent = async (eventId) => {
+        if (!window.confirm('Are you sure you want to delete this event?')) {
+            return;
+        }
+
+        try {
+            await axiosInstance.delete(`/api/events/delete/${eventId}`); // Updated path
+            
+            // Update the events state after successful deletion
+            const formattedDate = date.toLocaleDateString('en-CA');
+            setEvents(prevEvents => ({
+                ...prevEvents,
+                [formattedDate]: prevEvents[formattedDate].filter(event => event._id !== eventId)
+            }));
+        } catch (error) {
+            console.error('Failed to delete event:', error);
+            // Clear the error after a delay
+            setTimeout(() => setError(''), 3000);
+            setError('Failed to delete event');
+        }
+    };
+
     useEffect(() => {
         const fetchEvents = async () => {
             setLoading(true);
@@ -132,7 +154,15 @@ function Home() {
                                 getCurrentDateEvents().length > 0 ? (
                                     getCurrentDateEvents().map((event, index) => (
                                         <div key={index} className="mb-3 p-2 border rounded">
-                                            <h5>{event.title}</h5>
+                                            <div className="d-flex justify-content-between align-items-start">
+                                                <h5>{event.title}</h5>
+                                                <button 
+                                                    className="btn btn-danger btn-sm"
+                                                    onClick={() => handleDeleteEvent(event._id)}
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                             <p className="mb-1">{event.description}</p>
                                             <small className="text-muted">
                                                 {new Date(event.startTime).toLocaleTimeString()} - {new Date(event.endTime).toLocaleTimeString()}
