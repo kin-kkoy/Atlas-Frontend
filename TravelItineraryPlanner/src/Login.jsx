@@ -14,17 +14,18 @@ function Login() {
         try {
             const response = await axiosInstance.post("/login", { email, password });
             if (response.data.token) {
-                console.log('JWT Token:', response.data.token); // to check if token is received
-                console.log('Calendar ID:', response.data.user.calendar._id); // to confirm calendarId
+                console.log('JWT Token:', response.data.token);
+                console.log('Calendar ID:', response.data.user.calendarId); // Changed from calendar._id to calendarId
 
                 localStorage.setItem('token', response.data.token);
-                localStorage.setItem('calendarId', response.data.user.calendar._id);
+                localStorage.setItem('calendarId', response.data.user.calendarId); // Changed from calendar._id to calendarId
 
                 navigate('/home');
             } else {
                 setMessage(response.data.error);
             }
         } catch (err) {
+            console.error('Login error:', err.response?.data || err); // Add this line for debugging
             setMessage(err.response?.data?.error || "Login failed");
         }
     };

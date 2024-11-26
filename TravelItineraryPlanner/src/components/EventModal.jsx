@@ -42,8 +42,16 @@ function EventModal({ show, handleClose, handleSave, selectedDate }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const startDateTime = new Date(`${formData.date}T${formData.startTime}`);
-    const endDateTime = new Date(`${formData.date}T${formData.endTime}`);
+    
+    // Create date objects with explicit hours and minutes
+    const [startHours, startMinutes] = formData.startTime.split(':').map(Number);
+    const [endHours, endMinutes] = formData.endTime.split(':').map(Number);
+    
+    const startDateTime = new Date(formData.date);
+    startDateTime.setHours(startHours, startMinutes, 0);
+    
+    const endDateTime = new Date(formData.date);
+    endDateTime.setHours(endHours, endMinutes, 0);
     
     if (endDateTime <= startDateTime) {
       alert('End time must be after start time');
@@ -51,9 +59,9 @@ function EventModal({ show, handleClose, handleSave, selectedDate }) {
     }
 
     const eventData = {
-        ...formData,
-        startTime: startDateTime,
-        endTime: endDateTime
+      ...formData,
+      startTime: startDateTime,
+      endTime: endDateTime
     };
     handleSave(eventData);
     handleCloseModal();

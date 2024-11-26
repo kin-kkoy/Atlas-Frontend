@@ -35,20 +35,27 @@ function Home() {
 
     const handleSaveEvent = async (eventData) => {
         try {
-            const response = await axiosInstance.post('/events', {
+            const calendarId = localStorage.getItem('calendarId');
+            const response = await axiosInstance.post('/api/events/add', {
                 ...eventData,
-                startTime: eventData.startTime.toISOString(),
-                endTime: eventData.endTime.toISOString(),
+                calendarId,
+                startTime: eventData.startTime,
+                endTime: eventData.endTime,
             });
-            const newEvent = response.data;
-            const formattedDate = eventData.date;
-            setEvents(prevEvents => {
-                const dateEvents = prevEvents[formattedDate] || [];
-                return {
-                    ...prevEvents,
-                    [formattedDate]: [...dateEvents, newEvent],
-                };
+            
+            // Immediately fetch events after saving
+            const formattedDate = eventData.startTime.toLocaleDateString('en-CA');
+            const fetchResponse = await axiosInstance.get(`/api/events/by-date`, {
+                params: {
+                    calendarId,
+                    date: formattedDate
+                }
             });
+            
+            setEvents(prevEvents => ({
+                ...prevEvents,
+                [formattedDate]: fetchResponse.data
+            }));
         } catch (error) {
             console.error('Failed to save event:', error);
         }
@@ -58,8 +65,19 @@ function Home() {
         const fetchEvents = async () => {
             setLoading(true);
             try {
-                const formattedDate = date.toISOString().split('T')[0];
-                const response = await axiosInstance.get(`/events/${formattedDate}`);
+                const formattedDate = date.toLocaleDateString('en-CA');
+                const calendarId = localStorage.getItem('calendarId');
+                console.log('Fetching events for date:', formattedDate); // Debug log
+                
+                const response = await axiosInstance.get(`/api/events/by-date`, {
+                    params: {
+                        calendarId,
+                        date: formattedDate
+                    }
+                });
+                
+                console.log('Received events:', response.data); // Debug log
+                
                 setEvents(prevEvents => ({
                     ...prevEvents,
                     [formattedDate]: response.data
@@ -74,6 +92,12 @@ function Home() {
 
         fetchEvents();
     }, [date]);
+
+    // Add this function to get the current date's events
+    const getCurrentDateEvents = () => {
+        const formattedDate = date.toLocaleDateString('en-CA');
+        return events[formattedDate] || [];
+    };
 
     return (
         <div className="container mt-4">
@@ -105,17 +129,21 @@ function Home() {
                             ) : error ? (
                                 <p className="text-danger">{error}</p>
                             ) : (
-                                events[date.toISOString().split("T")[0]]?.map((event, index) => (
-                                    <div key={index} className="mb-3 p-2 border rounded">
-                                        <h5>{event.title}</h5>
-                                        <p className="mb-1">{event.description}</p>
-                                        <small className="text-muted">
-                                            {event.startTime} - {event.endTime}
-                                        </small>
-                                        <br />
-                                        <small className="text-muted">{event.location}</small>
-                                    </div>
-                                )) || <p>No events for this day.</p>
+                                getCurrentDateEvents().length > 0 ? (
+                                    getCurrentDateEvents().map((event, index) => (
+                                        <div key={index} className="mb-3 p-2 border rounded">
+                                            <h5>{event.title}</h5>
+                                            <p className="mb-1">{event.description}</p>
+                                            <small className="text-muted">
+                                                {new Date(event.startTime).toLocaleTimeString()} - {new Date(event.endTime).toLocaleTimeString()}
+                                            </small>
+                                            <br />
+                                            <small className="text-muted">{event.location}</small>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p>No events for this day.</p>
+                                )
                             )}
                         </div>
                     </div>
