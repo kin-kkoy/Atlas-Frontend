@@ -7,7 +7,6 @@ import Home from './Home'
 import ForgotPassword from './ForgotPassword'
 import ResetPassword from './ResetPassword'
 import ProtectedRoute from './components/ProtectedRoute'
-import Calendar from './components/InteractableCalendar'
 
 function App() {
   return (
@@ -23,14 +22,6 @@ function App() {
               <Home />
             </ProtectedRoute>
           } 
-        />
-        <Route
-          path='/calendar'
-          element={
-            <ProtectedRoute>
-              <Calendar />
-            </ProtectedRoute>
-          }
         />
         <Route path='/forgot-password' element={<ForgotPassword />} />
         <Route path='/reset-password' element={<ResetPassword />} />
