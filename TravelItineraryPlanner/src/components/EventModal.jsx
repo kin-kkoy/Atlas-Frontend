@@ -15,12 +15,12 @@ function EventModal({ show, handleClose, handleSave, selectedDate }) {
   });
 
   const handleChange = (e) => {
-    const value = e.targer.type === 'checkbox' ? e.target.checked : e.target.value;
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
+        ...formData,
+        [e.target.name]: value
     });
-  };
+};
 
   const handleSubmit = (e) => {
     e.preventDefault();

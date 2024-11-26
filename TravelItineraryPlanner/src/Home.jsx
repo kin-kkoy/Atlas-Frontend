@@ -21,6 +21,35 @@ function Home() {
                 navigate('/login');
             });
     }, [navigate]);
+
+    useEffect(() => {
+        const fetchEvents = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                const response = await axiosInstance.get('/events', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                // Group events by date
+                const eventsByDate = response.data.reduce((acc, event) => {
+                    const date = new Date(event.startTime).toISOString().split('T')[0];
+                    if (!acc[date]) {
+                        acc[date] = [];
+                    }
+                    acc[date].push(event);
+                    return acc;
+                }, {});
+                
+                setEvents(eventsByDate);
+            } catch (error) {
+                console.error('Failed to fetch events:', error);
+            }
+        };
+    
+        fetchEvents();
+    }, []);
     
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -33,10 +62,26 @@ function Home() {
 
     const handleSaveEvent = async (eventData) => {
         try {
-            const response = await axiosInstance.post('/events', eventData);
+            const token = localStorage.getItem('token');
+            const formattedEventData = {
+                title: eventData.title,
+                description: eventData.description,
+                location: eventData.location,
+                startTime: eventData.startTime,
+                endTime: eventData.endTime,
+                isRecurring: eventData.isRecurring,
+                recurrenceRule: eventData.recurrenceRule
+            };
+    
+            const response = await axiosInstance.post('/events', formattedEventData, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+    
             const newEvent = response.data;
-            const formattedDate = eventData.date;
-            setEvents((prevEvents) => ({
+            const formattedDate = new Date(eventData.startTime).toISOString().split('T')[0];
+            setEvents(prevEvents => ({
                 ...prevEvents,
                 [formattedDate]: [...(prevEvents[formattedDate] || []), newEvent],
             }));
