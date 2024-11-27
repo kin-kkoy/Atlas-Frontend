@@ -32,8 +32,7 @@ function Home() {
                     }
                 });
                 
-                // Group events by date
-                const eventsByDate = response.data.reduce((acc, event) => {
+                const eventsByDate = response.data.re   duce((acc, event) => {
                     const date = new Date(event.startTime).toISOString().split('T')[0];
                     if (!acc[date]) {
                         acc[date] = [];
