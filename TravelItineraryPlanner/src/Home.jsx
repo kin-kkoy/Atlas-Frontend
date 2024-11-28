@@ -5,6 +5,7 @@ import 'react-calendar/dist/Calendar.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import axiosInstance from './utils/axios';
 import EventModal from './components/EventModal';
+import './styles/Calendar.css';
 
 function Home() {
     const navigate = useNavigate();

@@ -1,0 +1,38 @@
+.react-calendar {
+    width: 100%;
+    background: white;
+    border: 1px solid #a0a096;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.125em;
+  }
+  
+  .react-calendar__tile {
+    position: relative;
+    padding-bottom: 20px !important;
+    height: 100px !important;
+  }
+  
+  .react-calendar__tile--active {
+    background: #006edc !important;
+    color: white !important;
+  }
+  
+  .react-calendar__tile--now {
+    background: #ffff76 !important;
+  }
+  
+  .react-calendar__month-view__days__day {
+    position: relative;
+  }
+  
+  /* Style for the event indicator dot */
+  .event-indicator {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background-color: #007bff;
+    border-radius: 50%;
+  }
