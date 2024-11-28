@@ -6,24 +6,44 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import axiosInstance from './utils/axios';
 import EventModal from './components/EventModal';
 import './styles/Calendar.css';
+import ShareCalendarModal from './components/ShareCalendarModal';
+import CalendarSidebar from './components/CalendarSidebar';
 
 function Home() {
     const navigate = useNavigate();
     const [date, setDate] = useState(new Date());
     const [events, setEvents] = useState({});
     const [showModal, setShowModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
     const handleCloseModal = () => setShowModal(false);
     const handleShowModal = () => setShowModal(true);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [visibleCalendars, setVisibleCalendars] = useState(new Set(['primary']));
+    const [userName, setUserName] = useState('');
 
     useEffect(() => {
-        axiosInstance.get('/home')
+        axiosInstance.get('/api/user/profile')
+            .then(response => {
+                setUserName(response.data.userName);
+            })
             .catch(() => {
                 localStorage.removeItem('token');
                 navigate('/login');
             });
     }, [navigate]);
+
+    const handleToggleCalendar = (calendarId, isVisible) => {
+        setVisibleCalendars(prev => {
+            const newSet = new Set(prev);
+            if(isVisible) {
+                newSet.add(calendarId);
+            } else {
+                newSet.delete(calendarId);
+            }
+            return newSet;
+        });
+    }
     
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -68,9 +88,8 @@ function Home() {
         }
 
         try {
-            await axiosInstance.delete(`/api/events/delete/${eventId}`); // Updated path
+            await axiosInstance.delete(`/api/events/delete/${eventId}`);
             
-            // Update the events state after successful deletion
             const formattedDate = date.toLocaleDateString('en-CA');
             setEvents(prevEvents => ({
                 ...prevEvents,
@@ -78,7 +97,6 @@ function Home() {
             }));
         } catch (error) {
             console.error('Failed to delete event:', error);
-            // Clear the error after a delay
             setTimeout(() => setError(''), 3000);
             setError('Failed to delete event');
         }
@@ -152,6 +170,7 @@ function Home() {
                     <button className="btn btn-danger float-end" onClick={handleLogout}>Logout</button>
                 </div>
             </div>
+            <CalendarSidebar onToggleCalendar={handleToggleCalendar} userName={userName} />
             <div className="row mt-4">
                 <div className="col-md-8">
                     <Calendar
@@ -162,6 +181,8 @@ function Home() {
                     />
                     <button className="btn btn-primary mt-3" onClick={handleShowModal}>
                         Add Event
+                    </button>
+                    <button className="btn btn-info mt-3 ms-2" onClick={() => setShowShareModal(true)}>Share Calendar
                     </button>
                 </div>
                 <div className="col-md-4">
@@ -176,7 +197,10 @@ function Home() {
                                 <p className="text-danger">{error}</p>
                             ) : (
                                 getCurrentDateEvents().length > 0 ? (
-                                    getCurrentDateEvents().map((event, index) => (
+                                    getCurrentDateEvents().filter(event => {
+                                        const isPrimaryCalendar = event.calendarId === localStorage.getItem('calendarId');
+                                        return visibleCalendars.has(isPrimaryCalendar ? 'primary' : event.calendarId);
+                                    }).map((event, index) => (
                                         <div key={index} className="mb-3 p-2 border rounded">
                                             <div className="d-flex justify-content-between align-items-start">
                                                 <h5>{event.title}</h5>
@@ -208,6 +232,11 @@ function Home() {
                 handleClose={handleCloseModal}
                 handleSave={handleSaveEvent}
                 selectedDate={date}
+            />
+            <ShareCalendarModal
+                show={showShareModal}
+                handleClose={() => setShowShareModal(false)}
+                calendarId={localStorage.getItem('calendarId')}
             />
         </div>
     );
