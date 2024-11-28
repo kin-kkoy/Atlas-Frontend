@@ -9,7 +9,7 @@ import EventModal from './components/EventModal';
 function Home() {
     const navigate = useNavigate();
     const [date, setDate] = useState(new Date());
-    const [events, setEvents] = useState([]);
+    const [events, setEvents] = useState({});
     const [showModal, setShowModal] = useState(false);
     const handleCloseModal = () => setShowModal(false);
     const handleShowModal = () => setShowModal(true);
@@ -121,6 +121,28 @@ function Home() {
         return events[formattedDate] || [];
     };
 
+    const tileContent = ({ date }) => {
+        const formattedDate = date.toLocaleDateString('en-CA');
+        const hasEvents = events[formattedDate]?.length > 0;
+        
+        return hasEvents ? (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '8px'
+            }}>
+                <div style={{
+                    height: '8px',
+                    width: '8px',
+                    backgroundColor: '#007bff',
+                    borderRadius: '50%',
+                    marginTop: '2px'
+                }}/>
+            </div>
+        ) : null;
+    };
+
     return (
         <div className="container mt-4">
             <div className="row">
@@ -135,6 +157,7 @@ function Home() {
                         value={date}
                         onChange={handleDateChange}
                         className="w-100"
+                        tileContent={tileContent}
                     />
                     <button className="btn btn-primary mt-3" onClick={handleShowModal}>
                         Add Event
