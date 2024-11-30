@@ -8,6 +8,8 @@ import EventModal from './components/EventModal';
 import './styles/Calendar.css';
 import ShareCalendarModal from './components/ShareCalendarModal';
 import CalendarSidebar from './components/CalendarSidebar';
+import { joinCalendar, leaveCalendar, subscribeToCalendarUpdates } from './utils/socket';
+import EventDetailsModal from './components/EventDetailsModal';
 
 function Home() {
     const navigate = useNavigate();
@@ -21,6 +23,13 @@ function Home() {
     const [loading, setLoading] = useState(false);
     const [visibleCalendars, setVisibleCalendars] = useState(new Set(['primary']));
     const [userName, setUserName] = useState('');
+    const [selectedEvent, setSelectedEvent] = useState(null);
+    const [showEventDetails, setShowEventDetails] = useState(false);
+
+    const handleShowEventDetails = (event) => {
+        setSelectedEvent(event);
+        setShowEventDetails(true);
+    }
 
     useEffect(() => {
         axiosInstance.get('/api/user/profile')
@@ -32,6 +41,25 @@ function Home() {
                 navigate('/login');
             });
     }, [navigate]);
+
+    useEffect(() => {
+        const calendarId = localStorage.getItem('calendarId');
+    
+        if(calendarId) {
+            joinCalendar(calendarId);
+            const unsubscribe = subscribeToCalendarUpdates((update) => {
+                setEvents(prevEvents => ({
+                    ...prevEvents,
+                    [update.date]: update.events
+                }));
+            });
+    
+            return () => {
+                leaveCalendar(calendarId);
+                unsubscribe();
+            };
+        }
+    }, []);
 
     const handleToggleCalendar = (calendarId, isVisible) => {
         setVisibleCalendars(prev => {
@@ -107,30 +135,28 @@ function Home() {
             setLoading(true);
             try {
                 const formattedDate = date.toLocaleDateString('en-CA');
-                const calendarId = localStorage.getItem('calendarId');
-                console.log('Fetching events for date:', formattedDate); // Debug log
+                console.log('Fetching events for date:', formattedDate);
                 
-                const response = await axiosInstance.get(`/api/events/by-date`, {
+                const response = await axiosInstance.get('/calendar/accessible', {
                     params: {
-                        calendarId,
                         date: formattedDate
                     }
                 });
                 
-                console.log('Received events:', response.data); // Debug log
+                console.log('Received events:', response.data);
                 
                 setEvents(prevEvents => ({
                     ...prevEvents,
                     [formattedDate]: response.data
                 }));
             } catch (error) {
+                console.error('Error fetching events:', error);
                 setError('Failed to fetch events');
-                console.error(error);
             } finally {
                 setLoading(false);
             }
         };
-
+    
         fetchEvents();
     }, [date]);
 
@@ -142,89 +168,78 @@ function Home() {
 
     const tileContent = ({ date }) => {
         const formattedDate = date.toLocaleDateString('en-CA');
-        const hasEvents = events[formattedDate]?.length > 0;
+        const dayEvents = events[formattedDate] || [];
         
-        return hasEvents ? (
-            <div style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                height: '8px'
-            }}>
-                <div style={{
-                    height: '8px',
-                    width: '8px',
-                    backgroundColor: '#007bff',
-                    borderRadius: '50%',
-                    marginTop: '2px'
-                }}/>
+        const getEventClass = (event) => {
+            const title = event.title.toLowerCase();
+            if (title.includes('breakfast')) return 'event-breakfast';
+            if (title.includes('lunch')) return 'event-lunch';
+            if (title.includes('palace') || title.includes('park')) return 'event-attraction';
+            return 'event-activity';
+        };
+    
+        return (
+            <div className="calendar-tile-content">
+                <button 
+                    className="add-event-button"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        setDate(date);
+                        handleShowModal();
+                    }}
+                >
+                    +
+                </button>
+                {dayEvents.length > 0 && (
+                    <div className="calendar-events-container">
+                        {dayEvents
+                            .sort((a, b) => new Date(a.startTime) - new Date(b.startTime))
+                            .map((event, index) => (
+                                <div 
+                                    key={index} 
+                                    className={`calendar-event-item ${getEventClass(event)}`}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleShowEventDetails(event);
+                                    }}
+                                >
+                                    {event.title}
+                                </div>
+                            ))}
+                    </div>
+                )}
             </div>
-        ) : null;
+        );
     };
 
     return (
-        <div className="container mt-4">
+        <div className="container-fluid p-4">
             <div className="row">
-                <div className="col-12">
-                    <h1>Travel Itinerary Planner</h1>
-                    <button className="btn btn-danger float-end" onClick={handleLogout}>Logout</button>
+                <div className="col-2">
+                    <CalendarSidebar onToggleCalendar={handleToggleCalendar} userName={userName} />
                 </div>
-            </div>
-            <CalendarSidebar onToggleCalendar={handleToggleCalendar} userName={userName} />
-            <div className="row mt-4">
-                <div className="col-md-8">
+                <div className="col-10">
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                        <h1>Travel Itinerary Planner</h1>
+                        <div>
+                            <button className="btn btn-primary me-2" onClick={handleShowModal}>
+                                Add Event
+                            </button>
+                            <button className="btn btn-info me-2" onClick={() => setShowShareModal(true)}>
+                                Share Calendar
+                            </button>
+                            <button className="btn btn-danger" onClick={handleLogout}>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
                     <Calendar
                         value={date}
                         onChange={handleDateChange}
                         className="w-100"
                         tileContent={tileContent}
+                        onClickDay={(date) => setDate(date)}
                     />
-                    <button className="btn btn-primary mt-3" onClick={handleShowModal}>
-                        Add Event
-                    </button>
-                    <button className="btn btn-info mt-3 ms-2" onClick={() => setShowShareModal(true)}>Share Calendar
-                    </button>
-                </div>
-                <div className="col-md-4">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="mb-0">Events for {date.toDateString()}</h3>
-                        </div>
-                        <div className="card-body">
-                            {loading ? (
-                                <p>Loading events...</p>
-                            ) : error ? (
-                                <p className="text-danger">{error}</p>
-                            ) : (
-                                getCurrentDateEvents().length > 0 ? (
-                                    getCurrentDateEvents().filter(event => {
-                                        const isPrimaryCalendar = event.calendarId === localStorage.getItem('calendarId');
-                                        return visibleCalendars.has(isPrimaryCalendar ? 'primary' : event.calendarId);
-                                    }).map((event, index) => (
-                                        <div key={index} className="mb-3 p-2 border rounded">
-                                            <div className="d-flex justify-content-between align-items-start">
-                                                <h5>{event.title}</h5>
-                                                <button 
-                                                    className="btn btn-danger btn-sm"
-                                                    onClick={() => handleDeleteEvent(event._id)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                            <p className="mb-1">{event.description}</p>
-                                            <small className="text-muted">
-                                                {new Date(event.startTime).toLocaleTimeString()} - {new Date(event.endTime).toLocaleTimeString()}
-                                            </small>
-                                            <br />
-                                            <small className="text-muted">{event.location}</small>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p>No events for this day.</p>
-                                )
-                            )}
-                        </div>
-                    </div>
                 </div>
             </div>
             <EventModal
@@ -237,6 +252,12 @@ function Home() {
                 show={showShareModal}
                 handleClose={() => setShowShareModal(false)}
                 calendarId={localStorage.getItem('calendarId')}
+            />
+            <EventDetailsModal
+                show={showEventDetails}
+                handleClose={() => setShowEventDetails(false)}
+                event={selectedEvent}
+                handleDelete={handleDeleteEvent}
             />
         </div>
     );

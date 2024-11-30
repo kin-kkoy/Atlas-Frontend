@@ -142,6 +142,14 @@ function CalendarSidebar({ onToggleCalendar, userName }) {
                                             onChange={(e) => handleToggleCalendar(calendar._id, e.target.checked)}
                                         />
                                         <Button variant="danger" size="sm" onClick={() => handleRemoveCalendar(calendar._id)}>Remove</Button>
+                                        <Form.Group className="mb-3">
+                                            <Form.Label>Calendar Color</Form.Label>
+                                            <Form.Control
+                                                type="color"
+                                                value={calendar.color || '#007bff'}
+                                                onChange={(e) => handleColorChange(calendar._id, e.target.value)}
+                                            />
+                                        </Form.Group>
                                     </ListGroup.Item>
                                 ))}
                             </ListGroup>
