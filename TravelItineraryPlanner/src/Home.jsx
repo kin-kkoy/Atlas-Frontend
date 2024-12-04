@@ -222,9 +222,6 @@ function Home() {
                     <div className="d-flex justify-content-between align-items-center mb-4">
                         <h1>Travel Itinerary Planner</h1>
                         <div>
-                            <button className="btn btn-primary me-2" onClick={handleShowModal}>
-                                Add Event
-                            </button>
                             <button className="btn btn-info me-2" onClick={() => setShowShareModal(true)}>
                                 Share Calendar
                             </button>
