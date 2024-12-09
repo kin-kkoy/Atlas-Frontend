@@ -1,192 +1,330 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import axiosInstance from './utils/axios';
-import EventModal from './components/EventModal';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import "bootstrap/dist/css/bootstrap.min.css";
+import axiosInstance from "./utils/axios";
+import EventModal from "./components/EventModal";
+import "./styles/Calendar.css";
+import ShareEventModal from "./components/ShareEventModal";
+import CalendarSidebar from "./components/CalendarSidebar";
+import {
+  joinCalendar,
+  leaveCalendar,
+  subscribeToCalendarUpdates,
+} from "./utils/socket";
+import EventDetailsModal from "./components/EventDetailsModal";
 
 function Home() {
-    const navigate = useNavigate();
-    const [date, setDate] = useState(new Date());
-    const [events, setEvents] = useState([]);
-    const [showModal, setShowModal] = useState(false);
-    const handleCloseModal = () => setShowModal(false);
-    const handleShowModal = () => setShowModal(true);
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [date, setDate] = useState(new Date());
+  const [events, setEvents] = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [showShareEventModal, setShowShareEventModal] = useState(false);
+  const [eventToShare, setEventToShare] = useState(null);
+  const handleCloseModal = () => setShowModal(false);
+  const handleShowModal = () => setShowModal(true);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [visibleCalendars, setVisibleCalendars] = useState(
+    new Set(["primary"])
+  );
+  const [userName, setUserName] = useState("");
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showEventDetails, setShowEventDetails] = useState(false);
 
-    useEffect(() => {
-        axiosInstance.get('/home')
-            .catch(() => {
-                localStorage.removeItem('token');
-                navigate('/login');
-            });
-    }, [navigate]);
-    
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        navigate('/login');
-    };
+  const handleShowEventDetails = (event) => {
+    setSelectedEvent(event);
+    setShowEventDetails(true);
+  };
 
-    const handleDateChange = (date) => {
-        setDate(date);
-    };
+  useEffect(() => {
+    axiosInstance
+      .get("/api/user/profile")
+      .then((response) => {
+        setUserName(response.data.userName);
+      })
+      .catch(() => {
+        localStorage.removeItem("token");
+        navigate("/login");
+      });
+  }, [navigate]);
 
-    const handleSaveEvent = async (eventData) => {
-        try {
-            const calendarId = localStorage.getItem('calendarId');
-            const response = await axiosInstance.post('/api/events/add', {
-                ...eventData,
-                calendarId,
-                startTime: eventData.startTime,
-                endTime: eventData.endTime,
-            });
-            
-            // Immediately fetch events after saving
-            const formattedDate = eventData.startTime.toLocaleDateString('en-CA');
-            const fetchResponse = await axiosInstance.get(`/api/events/by-date`, {
-                params: {
-                    calendarId,
-                    date: formattedDate
-                }
-            });
-            
-            setEvents(prevEvents => ({
+  useEffect(() => {
+    const calendarId = localStorage.getItem("calendarId");
+
+    if (calendarId) {
+      joinCalendar(calendarId);
+      const unsubscribe = subscribeToCalendarUpdates((update) => {
+        setEvents((prevEvents) => ({
+          ...prevEvents,
+          [update.date]: update.events,
+        }));
+      });
+
+      return () => {
+        leaveCalendar(calendarId);
+        unsubscribe();
+      };
+    }
+  }, []);
+
+  const handleToggleCalendar = (calendarId, isVisible) => {
+    setVisibleCalendars((prev) => {
+      const newSet = new Set(prev);
+      if (isVisible) {
+        newSet.add(calendarId);
+      } else {
+        newSet.delete(calendarId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  const handleDateChange = (date) => {
+    setDate(date);
+  };
+
+  const handleSaveEvent = async (eventData) => {
+    try {
+      const calendarId = localStorage.getItem("calendarId");
+      if (!calendarId) {
+        throw new Error("Calendar ID not found");
+      }
+
+      // Format the activities with proper date objects
+      const formattedActivities = eventData.activities.map((activity) => ({
+        ...activity,
+        startTime: new Date(activity.startTime).toISOString(),
+        endTime: new Date(activity.endTime).toISOString(),
+      }));
+
+      const response = await axiosInstance.post(
+        `/api/events/${calendarId}/add`,
+        {
+          ...eventData,
+          activities: formattedActivities,
+          date: new Date(eventData.date).toISOString(),
+        }
+      );
+
+      const formattedDate = new Date(eventData.date).toLocaleDateString(
+        "en-CA"
+      );
+      setEvents((prevEvents) => ({
+        ...prevEvents,
+        [formattedDate]: [
+          ...(prevEvents[formattedDate] || []),
+          response.data.event,
+        ],
+      }));
+      handleCloseModal();
+    } catch (error) {
+      console.error("Failed to save event:", error);
+      setError(error.response?.data?.error || "Failed to save event");
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    try {
+        await axiosInstance.delete(`/api/events/${eventId}`);
+
+        const formattedDate = date.toLocaleDateString("en-CA");
+        setEvents((prevEvents) => {
+            const updatedEvents = {
                 ...prevEvents,
-                [formattedDate]: fetchResponse.data
-            }));
-        } catch (error) {
-            console.error('Failed to save event:', error);
-        }
-    };
-
-    const handleDeleteEvent = async (eventId) => {
-        if (!window.confirm('Are you sure you want to delete this event?')) {
-            return;
-        }
-
-        try {
-            await axiosInstance.delete(`/api/events/delete/${eventId}`); // Updated path
-            
-            // Update the events state after successful deletion
-            const formattedDate = date.toLocaleDateString('en-CA');
-            setEvents(prevEvents => ({
-                ...prevEvents,
-                [formattedDate]: prevEvents[formattedDate].filter(event => event._id !== eventId)
-            }));
-        } catch (error) {
-            console.error('Failed to delete event:', error);
-            // Clear the error after a delay
-            setTimeout(() => setError(''), 3000);
-            setError('Failed to delete event');
-        }
-    };
-
-    useEffect(() => {
-        const fetchEvents = async () => {
-            setLoading(true);
-            try {
-                const formattedDate = date.toLocaleDateString('en-CA');
-                const calendarId = localStorage.getItem('calendarId');
-                console.log('Fetching events for date:', formattedDate); // Debug log
-                
-                const response = await axiosInstance.get(`/api/events/by-date`, {
-                    params: {
-                        calendarId,
-                        date: formattedDate
-                    }
-                });
-                
-                console.log('Received events:', response.data); // Debug log
-                
-                setEvents(prevEvents => ({
-                    ...prevEvents,
-                    [formattedDate]: response.data
-                }));
-            } catch (error) {
-                setError('Failed to fetch events');
-                console.error(error);
-            } finally {
-                setLoading(false);
+                [formattedDate]: (prevEvents[formattedDate] || []).filter(
+                    (event) => event._id !== eventId
+                )
+            };
+            if (updatedEvents[formattedDate].length === 0) {
+                delete updatedEvents[formattedDate];
             }
-        };
+            return updatedEvents;
+        });
 
-        fetchEvents();
-    }, [date]);
+        setShowEventDetails(false);
+    } catch (error) {
+        console.error("Failed to delete event:", error);
+        setError(error.response?.data?.error || "Failed to delete event");
+    }
+};
 
-    // Add this function to get the current date's events
-    const getCurrentDateEvents = () => {
-        const formattedDate = date.toLocaleDateString('en-CA');
-        return events[formattedDate] || [];
+  useEffect(() => {
+    const fetchEvents = async () => {
+      setLoading(true);
+      try {
+        const calendarId = localStorage.getItem("calendarId");
+        const formattedDate = date.toLocaleDateString("en-CA");
+
+        const response = await axiosInstance.get(
+          `/api/events/${calendarId}/by-date`,
+          {
+            params: {
+              date: formattedDate,
+            },
+          }
+        );
+
+        setEvents((prevEvents) => ({
+          ...prevEvents,
+          [formattedDate]: response.data,
+        }));
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        setError("Failed to fetch events");
+      } finally {
+        setLoading(false);
+      }
     };
+
+    fetchEvents();
+  }, [date]);
+
+  // Add this function to get the current date's events
+  const getCurrentDateEvents = () => {
+    const formattedDate = date.toLocaleDateString("en-CA");
+    return events[formattedDate] || [];
+  };
+
+  const getEventClass = (activity) => {
+    const type = activity.type?.toLowerCase() || "activity";
+    return `event-${type}`;
+  };
+
+  const tileContent = ({ date }) => {
+    const formattedDate = date.toLocaleDateString("en-CA");
+    const dayEvents = events[formattedDate] || [];
 
     return (
-        <div className="container mt-4">
-            <div className="row">
-                <div className="col-12">
-                    <h1>Travel Itinerary Planner</h1>
-                    <button className="btn btn-danger float-end" onClick={handleLogout}>Logout</button>
-                </div>
-            </div>
-            <div className="row mt-4">
-                <div className="col-md-8">
-                    <Calendar
-                        value={date}
-                        onChange={handleDateChange}
-                        className="w-100"
-                    />
-                    <button className="btn btn-primary mt-3" onClick={handleShowModal}>
-                        Add Event
-                    </button>
-                </div>
-                <div className="col-md-4">
-                    <div className="card">
-                        <div className="card-header">
-                            <h3 className="mb-0">Events for {date.toDateString()}</h3>
-                        </div>
-                        <div className="card-body">
-                            {loading ? (
-                                <p>Loading events...</p>
-                            ) : error ? (
-                                <p className="text-danger">{error}</p>
-                            ) : (
-                                getCurrentDateEvents().length > 0 ? (
-                                    getCurrentDateEvents().map((event, index) => (
-                                        <div key={index} className="mb-3 p-2 border rounded">
-                                            <div className="d-flex justify-content-between align-items-start">
-                                                <h5>{event.title}</h5>
-                                                <button 
-                                                    className="btn btn-danger btn-sm"
-                                                    onClick={() => handleDeleteEvent(event._id)}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                            <p className="mb-1">{event.description}</p>
-                                            <small className="text-muted">
-                                                {new Date(event.startTime).toLocaleTimeString()} - {new Date(event.endTime).toLocaleTimeString()}
-                                            </small>
-                                            <br />
-                                            <small className="text-muted">{event.location}</small>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p>No events for this day.</p>
-                                )
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <EventModal
-                show={showModal}
-                handleClose={handleCloseModal}
-                handleSave={handleSaveEvent}
-                selectedDate={date}
-            />
+      <div className="calendar-tile-content">
+        <div
+          className="add-event-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setDate(date);
+            handleShowModal();
+          }}
+          role="button"
+          tabIndex={0}
+        >
+          +
         </div>
+        {dayEvents.length > 0 && (
+          <div className="calendar-events-container">
+            {dayEvents.map((event) =>
+              event.activities.map((activity, index) => (
+                <div
+                  key={`${event._id}-${index}`}
+                  className={`calendar-event-item ${getEventClass(activity)}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleShowEventDetails(event);
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {activity.title}
+                </div>
+              ))
+            )}
+          </div>
+        )}
+      </div>
     );
+  };
+
+  const handleShareEvent = (event) => {
+    setEventToShare(event);
+    setShowShareEventModal(true);
+  };
+
+  return (
+    <div className="container-fluid p-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h1>Travel Itinerary Planner</h1>
+        <div>
+          <button
+            className="btn btn-info me-2"
+            onClick={() => setShowShareEventModal(true)}
+          >
+            Share Event
+          </button>
+          <button className="btn btn-danger" onClick={handleLogout}>
+            Logout
+          </button>
+        </div>
+      </div>
+      <div className="calendar-layout">
+        <div className="calendar-sidebar">
+          <div className="sidebar-section">
+            <h5>Favorites</h5>
+            <div className="sidebar-list">
+              {/* Favorites will be added dynamically */}
+            </div>
+          </div>
+          <div className="sidebar-section">
+            <h5>My Events</h5>
+            <div className="sidebar-list">
+              {getCurrentDateEvents().map((event) => (
+                <div key={event._id} className="event-list-item">
+                  <div className="event-title">{event.title}</div>
+                  {event.activities.map((activity, index) => (
+                    <div
+                      key={index}
+                      className={`activity-item ${getEventClass(activity)}`}
+                      onClick={() => handleShowEventDetails(event)}
+                    >
+                      {activity.title}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="sidebar-section">
+            <h5>Shared</h5>
+            <div className="sidebar-list">
+              {/* Shared calendars will be added dynamically */}
+            </div>
+          </div>
+        </div>
+        <div className="calendar-main">
+          <Calendar
+            value={date}
+            onChange={handleDateChange}
+            className="w-100"
+            tileContent={tileContent}
+            onClickDay={(date) => setDate(date)}
+          />
+        </div>
+      </div>
+
+      <EventModal
+        show={showModal}
+        onHide={handleCloseModal}
+        handleSave={handleSaveEvent}
+        selectedDate={date}
+      />
+      <EventDetailsModal
+        show={showEventDetails}
+        handleClose={() => setShowEventDetails(false)}
+        event={selectedEvent}
+        handleDelete={handleDeleteEvent}
+        handleShare={handleShareEvent}
+      />
+      <ShareEventModal
+        show={showShareEventModal}
+        handleClose={() => setShowShareEventModal(false)}
+        event={eventToShare}
+      />
+    </div>
+  );
 }
 
 export default Home;

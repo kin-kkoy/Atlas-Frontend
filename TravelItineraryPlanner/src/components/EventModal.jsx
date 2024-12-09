@@ -1,191 +1,273 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Form, Button, Modal } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Modal, Form, Button, ListGroup } from 'react-bootstrap';
+import { BsClock, BsPeople, BsGeoAlt, BsTextLeft, BsPlus, BsTrash } from 'react-icons/bs';
 
-function EventModal({ show, handleClose, handleSave, selectedDate }) {
-  const [formData, setFormData] = React.useState({
-    title: '',
-    description: '',
-    location: '',
-    startTime: '',
-    endTime: '',
-    date: selectedDate ? selectedDate.toISOString().split('T')[0] : '',
-    isRecurring: false,
-    recurrenceRule: ''
-  });
-
-  const resetForm = () => {
-    setFormData({
-      title: '',
-      description: '',
-      location: '',
-      startTime: '',
-      endTime: '',
-      date: selectedDate ? selectedDate.toISOString().split('T')[0] : '',
-      isRecurring: false,
-      recurrenceRule: ''
+function EventModal({ show, onHide, handleSave, selectedDate }) {
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [activities, setActivities] = useState([]);
+    const [currentActivity, setCurrentActivity] = useState({
+        title: '',
+        type: 'activity',
+        startTime: '',
+        endTime: '',
+        location: '',
+        isRecurring: false,
+        recurrenceRule: ''
     });
-  };
+    const [shareWithEmail, setShareWithEmail] = useState('');
+    const [sharePermission, setSharePermission] = useState('view');
+    const [showShareSection, setShowShareSection] = useState(false);
 
-  const handleCloseModal = () => {
-    resetForm();
-    handleClose();
-  };
-
-  const handleChange = (e) => {
-    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
-    setFormData({
-      ...formData,
-      [e.target.name]: value
-    });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    // Create date objects with explicit hours and minutes
-    const [startHours, startMinutes] = formData.startTime.split(':').map(Number);
-    const [endHours, endMinutes] = formData.endTime.split(':').map(Number);
-    
-    const startDateTime = new Date(formData.date);
-    startDateTime.setHours(startHours, startMinutes, 0);
-    
-    const endDateTime = new Date(formData.date);
-    endDateTime.setHours(endHours, endMinutes, 0);
-    
-    if (endDateTime <= startDateTime) {
-      alert('End time must be after start time');
-      return;
-    }
-
-    const eventData = {
-      ...formData,
-      startTime: startDateTime,
-      endTime: endDateTime
+    const handleEventChange = (e) => {
+        const { name, value } = e.target;
+        setEventData(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
-    handleSave(eventData);
-    handleCloseModal();
-  };
 
-  return (
-    <Modal show={show} onHide={handleCloseModal}>
-      <Modal.Header closeButton>
-        <Modal.Title>Add Event</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        <Form onSubmit={handleSubmit}>
-          <Form.Group className="mb-3">
-            <Form.Label>Event Title</Form.Label>
-            <Form.Control
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+    const handleActivityChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setCurrentActivity(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
 
-          <Form.Group className="mb-3">
-            <Form.Label>Description</Form.Label>
-            <Form.Control
-              as="textarea"
-              rows={3}
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-            />
-          </Form.Group>
+    const addActivity = () => {
+        if (currentActivity.title && currentActivity.startTime && currentActivity.endTime) {
+            setActivities(prev => [...prev, { ...currentActivity }]);
+            setCurrentActivity({
+                title: '',
+                description: '',
+                startTime: '',
+                endTime: '',
+                location: '',
+                isRecurring: false,
+                recurrenceRule: ''
+            });
+        }
+    };
 
-          <Form.Group className="mb-3">
-            <Form.Label>Location</Form.Label>
-            <Form.Control
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-            />
-          </Form.Group>
+    const resetForm = () => {
+        setTitle('');
+        setDescription('');
+        setActivities([]);
+        setCurrentActivity({
+            title: '',
+            type: 'activity',
+            startTime: '',
+            endTime: '',
+            location: '',
+            isRecurring: false,
+            recurrenceRule: ''
+        });
+        setShareWithEmail('');
+        setSharePermission('view');
+        setShowShareSection(false);
+    };
 
-          <Form.Group className="mb-3">
-            <Form.Label>Date</Form.Label>
-            <Form.Control
-              type="date"
-              name="date"
-              value={formData.date}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+    const removeActivity = (index) => {
+        setActivities(prev => prev.filter((_, i) => i !== index));
+    };
 
-          <Form.Group className="mb-3">
-            <Form.Label>Start Time</Form.Label>
-            <Form.Control
-              type="time"
-              name="startTime"
-              value={formData.startTime}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const eventData = {
+            title,
+            description,
+            activities,
+            date: selectedDate,
+            sharing: showShareSection ? {
+                recipientEmail: shareWithEmail,
+                permission: sharePermission
+            } : null
+        };
+        handleSave(eventData);
+        resetForm();
+    };
 
-          <Form.Group className="mb-3">
-            <Form.Label>End Time</Form.Label>
-            <Form.Control
-              type="time"
-              name="endTime"
-              value={formData.endTime}
-              onChange={handleChange}
-              required
-            />
-          </Form.Group>
+    return (
+        <Modal show={show} onHide={onHide} size="lg">
+            <Modal.Header closeButton>
+                <Modal.Title>Add Event</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+                <Form onSubmit={handleSubmit}>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Event Title</Form.Label>
+                        <Form.Control
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            required
+                        />
+                    </Form.Group>
 
-          <Form.Group className="mb-3">
-            <Form.Check
-              type="checkbox"
-              label="Recurring Event"
-              name="isRecurring"
-              checked={formData.isRecurring}
-              onChange={handleChange}
-            />
-          </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Event Description</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </Form.Group>
 
-          {formData.isRecurring && (
-            <Form.Group className="mb-3">
-              <Form.Label>Recurrence Rule</Form.Label>
-              <Form.Select
-                name="recurrenceRule"
-                value={formData.recurrenceRule}
-                onChange={handleChange}
-                >
-                    <option value="">Select a rule</option>
-                    <option value='daily'>Daily</option>
-                    <option value='weekly'>Weekly</option>
-                    <option value='monthly'>Monthly</option>
-                </Form.Select>
-            </Form.Group>
-          )}
+                    <hr />
+                    
+                    <h5>Activities</h5>
+                    
+                    <div className="border p-3 mb-3">
+                        <Form.Group className="mb-3">
+                            <Form.Label>Activity Title</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="title"
+                                value={currentActivity.title}
+                                onChange={handleActivityChange}
+                                placeholder="Enter activity title"
+                            />
+                        </Form.Group>
 
-          <div className="d-flex justify-content-end gap-2">
-            <Button variant="secondary" onClick={handleCloseModal}>
-              Cancel
-            </Button>
-            <Button variant="primary" type="submit">
-              Save Event
-            </Button>
-          </div>
-        </Form>
-      </Modal.Body>
-    </Modal>
-  );
-  
+                        <Form.Group className="mb-3">
+                            <Form.Label>Description</Form.Label>
+                            <Form.Control
+                                as="textarea"
+                                name="description"
+                                value={currentActivity.description}
+                                onChange={handleActivityChange}
+                            />
+                        </Form.Group>
+
+                        <div className="row">
+                            <div className="col">
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Start Time</Form.Label>
+                                    <Form.Control
+                                        type="datetime-local"
+                                        name="startTime"
+                                        value={currentActivity.startTime}
+                                        onChange={handleActivityChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                            <div className="col">
+                                <Form.Group className="mb-3">
+                                    <Form.Label>End Time</Form.Label>
+                                    <Form.Control
+                                        type="datetime-local"
+                                        name="endTime"
+                                        value={currentActivity.endTime}
+                                        onChange={handleActivityChange}
+                                    />
+                                </Form.Group>
+                            </div>
+                        </div>
+
+                        <Form.Group className="mb-3">
+                            <Form.Label>Location</Form.Label>
+                            <Form.Control
+                                type="text"
+                                name="location"
+                                value={currentActivity.location}
+                                onChange={handleActivityChange}
+                            />
+                        </Form.Group>
+
+                        <Form.Group className="mb-3">
+                            <Form.Check
+                                type="checkbox"
+                                label="Is Recurring"
+                                checked={currentActivity.isRecurring}
+                                onChange={(e) => handleActivityChange({
+                                    target: {
+                                        name: 'isRecurring',
+                                        value: e.target.checked
+                                    }
+                                })}
+                            />
+                        </Form.Group>
+
+                        {currentActivity.isRecurring && (
+                            <Form.Group className="mb-3">
+                                <Form.Label>Recurrence Rule</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    name="recurrenceRule"
+                                    value={currentActivity.recurrenceRule}
+                                    onChange={handleActivityChange}
+                                    placeholder="e.g., FREQ=WEEKLY;INTERVAL=1"
+                                />
+                            </Form.Group>
+                        )}
+
+                        <Button variant="secondary" onClick={addActivity}>
+                            <BsPlus /> Add Activity
+                        </Button>
+                    </div>
+
+                    <ListGroup>
+                        {activities.map((activity, index) => (
+                            <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6>{activity.title}</h6>
+                                    <small>{new Date(activity.startTime).toLocaleString()} - {new Date(activity.endTime).toLocaleString()}</small>
+                                </div>
+                                <Button variant="danger" size="sm" onClick={() => removeActivity(index)}>
+                                    <BsTrash />
+                                </Button>
+                            </ListGroup.Item>
+                        ))}
+                    </ListGroup>
+
+                    <div className="sharing-section mt-4">
+                        <Form.Check
+                            type="checkbox"
+                            label="Share this event"
+                            checked={showShareSection}
+                            onChange={(e) => setShowShareSection(e.target.checked)}
+                            className="mb-3"
+                        />
+                        
+                        {showShareSection && (
+                            <div className="sharing-options">
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Share with (email)</Form.Label>
+                                    <Form.Control
+                                        type="email"
+                                        value={shareWithEmail}
+                                        onChange={(e) => setShareWithEmail(e.target.value)}
+                                        placeholder="Enter recipient's email"
+                                    />
+                                </Form.Group>
+                                
+                                <Form.Group className="mb-3">
+                                    <Form.Label>Permission Level</Form.Label>
+                                    <Form.Select
+                                        value={sharePermission}
+                                        onChange={(e) => setSharePermission(e.target.value)}
+                                    >
+                                        <option value="view">View only</option>
+                                        <option value="modify">Can modify</option>
+                                    </Form.Select>
+                                </Form.Group>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="d-flex justify-content-end mt-3">
+                        <Button variant="secondary" onClick={onHide} className="me-2">
+                            Cancel
+                        </Button>
+                        <Button variant="primary" type="submit">
+                            Save Event
+                        </Button>
+                    </div>
+                </Form>
+            </Modal.Body>
+        </Modal>
+    );
 }
-
-EventModal.propTypes = {
-    show: PropTypes.bool.isRequired,
-    handleClose: PropTypes.func.isRequired,
-    handleSave: PropTypes.func.isRequired,
-    selectedDate: PropTypes.instanceOf(Date)
-  };
-
 
 export default EventModal;
