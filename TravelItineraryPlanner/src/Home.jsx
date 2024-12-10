@@ -14,6 +14,7 @@ import {
   subscribeToCalendarUpdates,
 } from "./utils/socket";
 import EventDetailsModal from "./components/EventDetailsModal";
+import NotificationBell from "./components/NotificationBell";
 
 function Home() {
   const navigate = useNavigate();
@@ -138,41 +139,23 @@ function Home() {
 
   const handleSaveEvent = async (eventData) => {
     try {
-      const calendarId = localStorage.getItem("calendarId");
-      if (!calendarId) {
-        throw new Error("Calendar ID not found");
-      }
+        const calendarId = localStorage.getItem("calendarId");
+        const response = await axiosInstance.post(`/api/events/${calendarId}/add`, eventData);
 
-      // Format the activities with proper date objects
-      const formattedActivities = eventData.activities.map((activity) => ({
-        ...activity,
-        startTime: new Date(activity.startTime).toISOString(),
-        endTime: new Date(activity.endTime).toISOString(),
-      }));
+        const formattedDate = new Date(eventData.date).toLocaleDateString("en-CA");
+        setEvents((prevEvents) => ({
+            ...prevEvents,
+            [formattedDate]: [...(prevEvents[formattedDate] || []), response.data.event],
+        }));
 
-      const response = await axiosInstance.post(
-        `/api/events/${calendarId}/add`,
-        {
-          ...eventData,
-          activities: formattedActivities,
-          date: new Date(eventData.date).toISOString(),
-        }
-      );
+        setAllEvents(prevAllEvents => [...prevAllEvents, response.data.event]);
 
-      const formattedDate = new Date(eventData.date).toLocaleDateString(
-        "en-CA"
-      );
-      setEvents((prevEvents) => ({
-        ...prevEvents,
-        [formattedDate]: [
-          ...(prevEvents[formattedDate] || []),
-          response.data.event,
-        ],
-      }));
-      handleCloseModal();
+        handleCloseModal();
+        return response;
     } catch (error) {
-      console.error("Failed to save event:", error);
-      setError(error.response?.data?.error || "Failed to save event");
+        console.error("Failed to save event:", error);
+        setError(error.response?.data?.error || "Failed to save event");
+        throw error;
     }
   };
 
@@ -307,16 +290,17 @@ function Home() {
     <div className="container-fluid p-4">
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
         <h1 className="mb-2 mb-md-0">Travel Itinerary Planner</h1>
-        <div className="d-flex gap-2">
-          <button
-            className="btn btn-info"
-            onClick={() => setShowShareEventModal(true)}
-          >
-            Share Event
-          </button>
-          <button className="btn btn-danger" onClick={handleLogout}>
-            Logout
-          </button>
+        <div className="d-flex gap-2 align-items-center">
+            <NotificationBell />
+            <button
+                className="btn btn-info"
+                onClick={() => setShowShareEventModal(true)}
+            >
+                Share Event
+            </button>
+            <button className="btn btn-danger" onClick={handleLogout}>
+                Logout
+            </button>
         </div>
       </div>
       <div className="calendar-layout">
