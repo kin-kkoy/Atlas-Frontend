@@ -32,6 +32,52 @@ function Home() {
   const [userName, setUserName] = useState("");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [allEvents, setAllEvents] = useState([]);
+  const [selectedEventFilter, setSelectedEventFilter] = useState(null);
+
+  useEffect(() => {
+    const fetchAllEvents = async () => {
+        try {
+            const calendarId = localStorage.getItem("calendarId");
+            if (!calendarId) {
+                throw new Error("Calendar ID not found");
+            }
+            const response = await axiosInstance.get(`/api/events/${calendarId}/all`);
+            console.log("Fetched events:", response.data); // For debugging
+            setAllEvents(response.data);
+        } catch (error) {
+            console.error("Failed to fetch all events:", error);
+            setError(error.response?.data?.error || "Failed to fetch events");
+        }
+    };
+    fetchAllEvents();
+  }, []);
+
+  const handleEventFilter = async (eventId) => {
+    setSelectedEventFilter(selectedEventFilter === eventId ? null : eventId);
+    
+    try {
+        const calendarId = localStorage.getItem("calendarId");
+        const formattedDate = date.toLocaleDateString("en-CA");
+        
+        const response = await axiosInstance.get(
+            `/api/events/${calendarId}/by-date`,
+            {
+                params: {
+                    date: formattedDate,
+                },
+            }
+        );
+
+        setEvents((prevEvents) => ({
+            ...prevEvents,
+            [formattedDate]: response.data,
+        }));
+    } catch (error) {
+        console.error("Error fetching events:", error);
+        setError("Failed to fetch events");
+    }
+  };
 
   const handleShowEventDetails = (event) => {
     setSelectedEvent(event);
@@ -132,7 +178,12 @@ function Home() {
 
   const handleDeleteEvent = async (eventId) => {
     try {
-        await axiosInstance.delete(`/api/events/${eventId}`);
+        const calendarId = localStorage.getItem("calendarId");
+        if (!calendarId) {
+            throw new Error("Calendar ID not found");
+        }
+
+        await axiosInstance.delete(`/api/events/${calendarId}/events/${eventId}`);
 
         const formattedDate = date.toLocaleDateString("en-CA");
         setEvents((prevEvents) => {
@@ -148,7 +199,12 @@ function Home() {
             return updatedEvents;
         });
 
+        setAllEvents((prevAllEvents) => 
+            prevAllEvents.filter(event => event._id !== eventId)
+        );
+
         setShowEventDetails(false);
+        setSelectedEventFilter(null);
     } catch (error) {
         console.error("Failed to delete event:", error);
         setError(error.response?.data?.error || "Failed to delete event");
@@ -200,42 +256,45 @@ function Home() {
   const tileContent = ({ date }) => {
     const formattedDate = date.toLocaleDateString("en-CA");
     const dayEvents = events[formattedDate] || [];
+    const filteredEvents = selectedEventFilter
+        ? dayEvents.filter(event => event._id === selectedEventFilter)
+        : dayEvents;
 
     return (
-      <div className="calendar-tile-content">
-        <div
-          className="add-event-button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setDate(date);
-            handleShowModal();
-          }}
-          role="button"
-          tabIndex={0}
-        >
-          +
-        </div>
-        {dayEvents.length > 0 && (
-          <div className="calendar-events-container">
-            {dayEvents.map((event) =>
-              event.activities.map((activity, index) => (
-                <div
-                  key={`${event._id}-${index}`}
-                  className={`calendar-event-item ${getEventClass(activity)}`}
-                  onClick={(e) => {
+        <div className="calendar-tile-content">
+            <div
+                className="add-event-button"
+                onClick={(e) => {
                     e.stopPropagation();
-                    handleShowEventDetails(event);
-                  }}
-                  role="button"
-                  tabIndex={0}
-                >
-                  {activity.title}
+                    setDate(date);
+                    handleShowModal();
+                }}
+                role="button"
+                tabIndex={0}
+            >
+                +
+            </div>
+            {filteredEvents.length > 0 && (
+                <div className="calendar-events-container">
+                    {filteredEvents.map((event) =>
+                        event.activities.map((activity, index) => (
+                            <div
+                                key={`${event._id}-${index}`}
+                                className={`calendar-event-item ${getEventClass(activity)}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleShowEventDetails(event);
+                                }}
+                                role="button"
+                                tabIndex={0}
+                            >
+                                {activity.title}
+                            </div>
+                        ))
+                    )}
                 </div>
-              ))
             )}
-          </div>
-        )}
-      </div>
+        </div>
     );
   };
 
@@ -246,11 +305,11 @@ function Home() {
 
   return (
     <div className="container-fluid p-4">
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h1>Travel Itinerary Planner</h1>
-        <div>
+      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
+        <h1 className="mb-2 mb-md-0">Travel Itinerary Planner</h1>
+        <div className="d-flex gap-2">
           <button
-            className="btn btn-info me-2"
+            className="btn btn-info"
             onClick={() => setShowShareEventModal(true)}
           >
             Share Event
@@ -271,18 +330,13 @@ function Home() {
           <div className="sidebar-section">
             <h5>My Events</h5>
             <div className="sidebar-list">
-              {getCurrentDateEvents().map((event) => (
-                <div key={event._id} className="event-list-item">
+              {allEvents.map((event) => (
+                <div 
+                  key={event._id} 
+                  className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
+                  onClick={() => handleEventFilter(event._id)}
+                >
                   <div className="event-title">{event.title}</div>
-                  {event.activities.map((activity, index) => (
-                    <div
-                      key={index}
-                      className={`activity-item ${getEventClass(activity)}`}
-                      onClick={() => handleShowEventDetails(event)}
-                    >
-                      {activity.title}
-                    </div>
-                  ))}
                 </div>
               ))}
             </div>
