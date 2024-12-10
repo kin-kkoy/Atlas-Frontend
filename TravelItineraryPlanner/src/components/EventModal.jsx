@@ -8,6 +8,7 @@ import {
   BsPlus,
   BsTrash,
 } from "react-icons/bs";
+import axiosInstance from "../utils/axios";
 
 function EventModal({ show, onHide, handleSave, selectedDate }) {
   const [title, setTitle] = useState("");
@@ -89,16 +90,33 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
       title,
       description,
       activities,
-      date: selectedDate,
-      sharing: showShareSection
-        ? {
-            recipientEmail: shareWithEmail,
-            permission: sharePermission,
-          }
-        : null,
+      date: selectedDate
     };
-    handleSave(eventData);
-    resetForm();
+
+    try {
+      const response = await handleSave(eventData);
+      
+      if (showShareSection && response?.data?.event) {
+        try {
+          // Share the event
+          const shareResponse = await axiosInstance.post('/api/events/share', {
+            eventId: response.data.event._id,
+            recipientEmail: shareWithEmail,
+            permission: sharePermission
+          });
+
+          if (shareResponse.data.message === 'Event shared successfully') {
+            console.log('Event shared successfully');
+          }
+        } catch (shareError) {
+          console.error('Error sharing event:', shareError.response?.data?.error || shareError.message);
+        }
+      }
+      resetForm();
+      onHide();
+    } catch (error) {
+      console.error('Error creating event:', error.response?.data?.error || error.message);
+    }
   };
 
   return (
