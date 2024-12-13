@@ -180,12 +180,9 @@ function Home() {
   const handleDeleteEvent = async (eventId) => {
     try {
         const calendarId = localStorage.getItem("calendarId");
-        if (!calendarId) {
-            throw new Error("Calendar ID not found");
-        }
+        const response = await axiosInstance.delete(`/api/events/${calendarId}/events/${eventId}`);
 
-        await axiosInstance.delete(`/api/events/${calendarId}/events/${eventId}`);
-
+        // Remove from events state
         const formattedDate = date.toLocaleDateString("en-CA");
         setEvents((prevEvents) => {
             const updatedEvents = {
@@ -200,15 +197,21 @@ function Home() {
             return updatedEvents;
         });
 
+        // Remove from allEvents state
         setAllEvents((prevAllEvents) => 
             prevAllEvents.filter(event => event._id !== eventId)
+        );
+
+        // Remove from sharedEvents state if it exists there
+        setSharedEvents((prevSharedEvents) =>
+            prevSharedEvents.filter(event => event._id !== eventId)
         );
 
         setShowEventDetails(false);
         setSelectedEventFilter(null);
     } catch (error) {
         console.error("Failed to delete event:", error);
-        setError(error.response?.data?.error || "Failed to delete event");
+        setError("Failed to delete event");
     }
 };
 
