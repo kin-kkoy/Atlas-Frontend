@@ -89,13 +89,14 @@ function Home() {
     }
   };
 
-  const handleShowEventDetails = async (event) => {
+  const handleShowEventDetails = async (event, clickedActivity) => {
     try {
       const calendarId = localStorage.getItem("calendarId");
       const response = await axiosInstance.get(`/api/events/${calendarId}/events/${event._id}/activities`);
       setSelectedEvent({
         ...event,
-        activities: response.data
+        activities: response.data,
+        selectedActivity: clickedActivity // Add the clicked activity
       });
       setShowEventDetails(true);
     } catch (error) {
@@ -307,7 +308,7 @@ function Home() {
                                 className={`calendar-event-item ${getEventClass(activity)}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleShowEventDetails(event);
+                                    handleShowEventDetails(event, activity); // Pass the clicked activity
                                 }}
                                 role="button"
                                 tabIndex={0}

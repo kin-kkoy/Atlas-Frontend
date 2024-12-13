@@ -5,8 +5,8 @@ import { BsClock, BsGeoAlt } from "react-icons/bs";
 function EventDetailsModal({ show, handleClose, event, handleDelete, handleShare }) {
   if (!event) return null;
 
-  // Get the first activity from the event (since we're clicking on a specific activity)
-  const activity = event.activities?.[0];
+  // Use the selected activity instead of first activity
+  const activity = event.selectedActivity;
 
   if (!activity) return null;
 
