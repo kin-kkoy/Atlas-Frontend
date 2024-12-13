@@ -89,9 +89,20 @@ function Home() {
     }
   };
 
-  const handleShowEventDetails = (event) => {
-    setSelectedEvent(event);
-    setShowEventDetails(true);
+  const handleShowEventDetails = async (event, clickedActivity) => {
+    try {
+      const calendarId = localStorage.getItem("calendarId");
+      const response = await axiosInstance.get(`/api/events/${calendarId}/events/${event._id}/activities`);
+      setSelectedEvent({
+        ...event,
+        activities: response.data,
+        selectedActivity: clickedActivity // Add the clicked activity
+      });
+      setShowEventDetails(true);
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+      setError("Failed to fetch event details");
+    }
   };
 
   useEffect(() => {
@@ -300,7 +311,7 @@ function Home() {
                                 className={`calendar-event-item ${getEventClass(activity)}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleShowEventDetails(event);
+                                    handleShowEventDetails(event, activity); // Pass the clicked activity
                                 }}
                                 role="button"
                                 tabIndex={0}
