@@ -6,13 +6,15 @@ function ShareEventModal({ show, handleClose, event }) {
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
+    const [sharePermission, setSharePermission] = useState('view');
 
     const handleShare = async (e) => {
         e.preventDefault();
         try {
             await axiosInstance.post('/api/events/share', {
                 eventId: event._id,
-                recipientEmail: email
+                recipientEmail: email,
+                permission: sharePermission
             });
             setSuccess('Event shared successfully!');
             setEmail('');
@@ -44,6 +46,16 @@ function ShareEventModal({ show, handleClose, event }) {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                         />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Share Permission</Form.Label>
+                        <Form.Select
+                            value={sharePermission}
+                            onChange={(e) => setSharePermission(e.target.value)}
+                        >
+                            <option value="view">View only</option>
+                            <option value="edit">Can edit</option>
+                        </Form.Select>
                     </Form.Group>
                     <Button variant="primary" type="submit">
                         Share Event

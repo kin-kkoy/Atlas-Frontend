@@ -26,6 +26,7 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
   const [shareWithEmail, setShareWithEmail] = useState("");
   const [sharePermission, setSharePermission] = useState("view");
   const [showShareSection, setShowShareSection] = useState(false);
+  const [isShared, setIsShared] = useState(false);
 
   const handleEventChange = (e) => {
     const { name, value } = e.target;
@@ -89,34 +90,20 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
     const eventData = {
       title,
       description,
+      date: selectedDate,
       activities,
-      date: selectedDate
+      isShared: showShareSection,
+      shareWithEmail: showShareSection ? shareWithEmail : null,
+      sharePermission: showShareSection ? sharePermission : null
     };
+    await handleSave(eventData);
+    resetForm();
+    onHide();
+  };
 
-    try {
-      const response = await handleSave(eventData);
-      
-      if (showShareSection && response?.data?.event) {
-        try {
-          // Share the event
-          const shareResponse = await axiosInstance.post('/api/events/share', {
-            eventId: response.data.event._id,
-            recipientEmail: shareWithEmail,
-            permission: sharePermission
-          });
-
-          if (shareResponse.data.message === 'Event shared successfully') {
-            console.log('Event shared successfully');
-          }
-        } catch (shareError) {
-          console.error('Error sharing event:', shareError.response?.data?.error || shareError.message);
-        }
-      }
-      resetForm();
-      onHide();
-    } catch (error) {
-      console.error('Error creating event:', error.response?.data?.error || error.message);
-    }
+  const handleShareSectionChange = (e) => {
+    setShowShareSection(e.target.checked);
+    setIsShared(e.target.checked);
   };
 
   return (
@@ -274,7 +261,7 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
               type="checkbox"
               label="Share this event"
               checked={showShareSection}
-              onChange={(e) => setShowShareSection(e.target.checked)}
+              onChange={handleShareSectionChange}
               className="mb-3"
             />
 

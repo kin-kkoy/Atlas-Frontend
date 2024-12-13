@@ -35,6 +35,7 @@ function Home() {
   const [showEventDetails, setShowEventDetails] = useState(false);
   const [allEvents, setAllEvents] = useState([]);
   const [selectedEventFilter, setSelectedEventFilter] = useState(null);
+  const [sharedEvents, setSharedEvents] = useState([]);
 
   useEffect(() => {
     const fetchAllEvents = async () => {
@@ -43,9 +44,17 @@ function Home() {
             if (!calendarId) {
                 throw new Error("Calendar ID not found");
             }
+            
+            // Fetch regular events
             const response = await axiosInstance.get(`/api/events/${calendarId}/all`);
-            console.log("Fetched events:", response.data); // For debugging
-            setAllEvents(response.data);
+            // Filter out shared events from regular events
+            const regularEvents = response.data.filter(event => !event.isShared);
+            setAllEvents(regularEvents);
+            
+            // Fetch shared events
+            const sharedResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
+            setSharedEvents(sharedResponse.data);
+            
         } catch (error) {
             console.error("Failed to fetch all events:", error);
             setError(error.response?.data?.error || "Failed to fetch events");
@@ -80,9 +89,20 @@ function Home() {
     }
   };
 
-  const handleShowEventDetails = (event) => {
-    setSelectedEvent(event);
-    setShowEventDetails(true);
+  const handleShowEventDetails = async (event, clickedActivity) => {
+    try {
+      const calendarId = localStorage.getItem("calendarId");
+      const response = await axiosInstance.get(`/api/events/${calendarId}/events/${event._id}/activities`);
+      setSelectedEvent({
+        ...event,
+        activities: response.data,
+        selectedActivity: clickedActivity // Add the clicked activity
+      });
+      setShowEventDetails(true);
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+      setError("Failed to fetch event details");
+    }
   };
 
   useEffect(() => {
@@ -137,37 +157,43 @@ function Home() {
     setDate(date);
   };
 
-  const handleSaveEvent = async (eventData) => {
+  const handleSave = async (eventData) => {
     try {
         const calendarId = localStorage.getItem("calendarId");
+        // First save the event
         const response = await axiosInstance.post(`/api/events/${calendarId}/add`, eventData);
+        const savedEvent = response.data.event;
 
-        const formattedDate = new Date(eventData.date).toLocaleDateString("en-CA");
-        setEvents((prevEvents) => ({
-            ...prevEvents,
-            [formattedDate]: [...(prevEvents[formattedDate] || []), response.data.event],
-        }));
+        // If event is marked for sharing, share it
+        if (eventData.isShared && eventData.shareWithEmail) {
+            await axiosInstance.post('/api/events/share', {
+                eventId: savedEvent._id,
+                recipientEmail: eventData.shareWithEmail,
+                permission: eventData.sharePermission
+            });
+        }
 
-        setAllEvents(prevAllEvents => [...prevAllEvents, response.data.event]);
+        // Update allEvents state with the new event
+        setAllEvents(prevEvents => [...prevEvents, savedEvent]);
 
-        handleCloseModal();
-        return response;
+        // If it's a shared event, update sharedEvents state
+        if (eventData.isShared) {
+            const sharedEventResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
+            setSharedEvents(sharedEventResponse.data);
+        }
+
     } catch (error) {
-        console.error("Failed to save event:", error);
-        setError(error.response?.data?.error || "Failed to save event");
-        throw error;
+        console.error("Error saving/sharing event:", error);
+        setError(error.response?.data?.error || "Failed to save/share event");
     }
   };
 
   const handleDeleteEvent = async (eventId) => {
     try {
         const calendarId = localStorage.getItem("calendarId");
-        if (!calendarId) {
-            throw new Error("Calendar ID not found");
-        }
+        const response = await axiosInstance.delete(`/api/events/${calendarId}/events/${eventId}`);
 
-        await axiosInstance.delete(`/api/events/${calendarId}/events/${eventId}`);
-
+        // Remove from events state
         const formattedDate = date.toLocaleDateString("en-CA");
         setEvents((prevEvents) => {
             const updatedEvents = {
@@ -182,15 +208,21 @@ function Home() {
             return updatedEvents;
         });
 
+        // Remove from allEvents state
         setAllEvents((prevAllEvents) => 
             prevAllEvents.filter(event => event._id !== eventId)
+        );
+
+        // Remove from sharedEvents state if it exists there
+        setSharedEvents((prevSharedEvents) =>
+            prevSharedEvents.filter(event => event._id !== eventId)
         );
 
         setShowEventDetails(false);
         setSelectedEventFilter(null);
     } catch (error) {
         console.error("Failed to delete event:", error);
-        setError(error.response?.data?.error || "Failed to delete event");
+        setError("Failed to delete event");
     }
 };
 
@@ -238,10 +270,20 @@ function Home() {
 
   const tileContent = ({ date }) => {
     const formattedDate = date.toLocaleDateString("en-CA");
-    const dayEvents = events[formattedDate] || [];
-    const filteredEvents = selectedEventFilter
-        ? dayEvents.filter(event => event._id === selectedEventFilter)
-        : dayEvents;
+    const displayEvents = selectedEventFilter
+        ? [...allEvents, ...sharedEvents].filter(event => {
+            return event._id === selectedEventFilter && 
+                   event.activities?.some(activity => {
+                       const activityDate = new Date(activity.startTime).toLocaleDateString("en-CA");
+                       return activityDate === formattedDate;
+                   });
+        })
+        : [...allEvents, ...sharedEvents].filter(event => 
+            event.activities?.some(activity => {
+                const activityDate = new Date(activity.startTime).toLocaleDateString("en-CA");
+                return activityDate === formattedDate;
+            })
+        );
 
     return (
         <div className="calendar-tile-content">
@@ -257,21 +299,25 @@ function Home() {
             >
                 +
             </div>
-            {filteredEvents.length > 0 && (
+            {displayEvents.length > 0 && (
                 <div className="calendar-events-container">
-                    {filteredEvents.map((event) =>
-                        event.activities.map((activity, index) => (
+                    {displayEvents.map((event) =>
+                        event.activities?.filter(activity => {
+                            const activityDate = new Date(activity.startTime).toLocaleDateString("en-CA");
+                            return activityDate === formattedDate;
+                        }).map((activity, index) => (
                             <div
                                 key={`${event._id}-${index}`}
                                 className={`calendar-event-item ${getEventClass(activity)}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleShowEventDetails(event);
+                                    handleShowEventDetails(event, activity); // Pass the clicked activity
                                 }}
                                 role="button"
                                 tabIndex={0}
                             >
                                 {activity.title}
+                                {event.sharedBy && <small className="shared-by">Shared by: {event.sharedBy}</small>}
                             </div>
                         ))
                     )}
@@ -284,6 +330,39 @@ function Home() {
   const handleShareEvent = (event) => {
     setEventToShare(event);
     setShowShareEventModal(true);
+  };
+
+  const handleEventClick = async (event) => {
+    try {
+        const calendarId = localStorage.getItem("calendarId");
+        // Fetch activities for the selected event
+        const response = await axiosInstance.get(`/api/events/${calendarId}/events/${event._id}/activities`);
+        
+        if (event.isShared) {
+            // Update shared events
+            setSharedEvents(prevSharedEvents => 
+                prevSharedEvents.map(e => 
+                    e._id === event._id 
+                        ? { ...e, activities: response.data }
+                        : e
+                )
+            );
+        } else {
+            // Update regular events
+            setAllEvents(prevAllEvents => 
+                prevAllEvents.map(e => 
+                    e._id === event._id 
+                        ? { ...e, activities: response.data }
+                        : e
+                )
+            );
+        }
+
+        setSelectedEventFilter(event._id);
+    } catch (error) {
+        console.error("Error fetching event activities:", error);
+        setError("Failed to fetch event activities");
+    }
   };
 
   return (
@@ -314,21 +393,34 @@ function Home() {
           <div className="sidebar-section">
             <h5>My Events</h5>
             <div className="sidebar-list">
-              {allEvents.map((event) => (
-                <div 
-                  key={event._id} 
-                  className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
-                  onClick={() => handleEventFilter(event._id)}
-                >
-                  <div className="event-title">{event.title}</div>
-                </div>
-              ))}
+                {allEvents.map((event) => (
+                    <div 
+                        key={event._id} 
+                        className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
+                        onClick={() => handleEventClick(event)}
+                    >
+                        <div className="event-title">{event.title}</div>
+                    </div>
+                ))}
             </div>
           </div>
           <div className="sidebar-section">
-            <h5>Shared</h5>
+            <h5>Shared Events</h5>
             <div className="sidebar-list">
-              {/* Shared calendars will be added dynamically */}
+                {sharedEvents.map((event) => (
+                    <div 
+                        key={event._id} 
+                        className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
+                        onClick={() => handleEventClick(event)}
+                    >
+                        <div className="event-title">
+                            {event.title}
+                            <small className="d-block text-muted">
+                                Shared by: {event.sharedBy}
+                            </small>
+                        </div>
+                    </div>
+                ))}
             </div>
           </div>
         </div>
@@ -346,7 +438,7 @@ function Home() {
       <EventModal
         show={showModal}
         onHide={handleCloseModal}
-        handleSave={handleSaveEvent}
+        handleSave={handleSave}
         selectedDate={date}
       />
       <EventDetailsModal
