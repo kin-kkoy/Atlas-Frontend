@@ -24,7 +24,7 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
     recurrenceRule: "",
   });
   const [shareWithEmail, setShareWithEmail] = useState("");
-  const [sharePermission, setSharePermission] = useState("view");
+  const [sharePermission, setSharePermission] = useState("edit");
   const [showShareSection, setShowShareSection] = useState(false);
   const [isShared, setIsShared] = useState(false);
 
@@ -77,7 +77,7 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
       recurrenceRule: "",
     });
     setShareWithEmail("");
-    setSharePermission("view");
+    setSharePermission("edit");
     setShowShareSection(false);
   };
 
@@ -85,7 +85,7 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
     setActivities((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     const eventData = {
       title,
@@ -96,9 +96,9 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
       shareWithEmail: showShareSection ? shareWithEmail : null,
       sharePermission: showShareSection ? sharePermission : null
     };
-    await handleSave(eventData);
+    
+    handleSave(eventData);
     resetForm();
-    onHide();
   };
 
   const handleShareSectionChange = (e) => {
@@ -284,7 +284,7 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
                     onChange={(e) => setSharePermission(e.target.value)}
                   >
                     <option value="view">View only</option>
-                    <option value="modify">Can modify</option>
+                    <option value="edit">Can modify</option>
                   </Form.Select>
                 </Form.Group>
               </div>
