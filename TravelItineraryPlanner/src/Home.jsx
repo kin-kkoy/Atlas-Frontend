@@ -89,9 +89,19 @@ function Home() {
     }
   };
 
-  const handleShowEventDetails = (event) => {
-    setSelectedEvent(event);
-    setShowEventDetails(true);
+  const handleShowEventDetails = async (event) => {
+    try {
+      const calendarId = localStorage.getItem("calendarId");
+      const response = await axiosInstance.get(`/api/events/${calendarId}/events/${event._id}/activities`);
+      setSelectedEvent({
+        ...event,
+        activities: response.data
+      });
+      setShowEventDetails(true);
+    } catch (error) {
+      console.error("Error fetching event details:", error);
+      setError("Failed to fetch event details");
+    }
   };
 
   useEffect(() => {

@@ -5,33 +5,38 @@ import { BsClock, BsGeoAlt } from "react-icons/bs";
 function EventDetailsModal({ show, handleClose, event, handleDelete, handleShare }) {
   if (!event) return null;
 
+  // Get the first activity from the event (since we're clicking on a specific activity)
+  const activity = event.activities?.[0];
+
+  if (!activity) return null;
+
+  const formatDateTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      dateStyle: 'medium',
+      timeStyle: 'short'
+    });
+  };
+
   return (
     <Modal show={show} onHide={handleClose}>
       <Modal.Header closeButton>
-        <Modal.Title>{event.title}</Modal.Title>
+        <Modal.Title>{activity.title}</Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <div className="mb-3">
           <BsClock className="me-2" />
-          {new Date(event.startTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}{" "}
-          -{" "}
-          {new Date(event.endTime).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          {formatDateTime(activity.startTime)} - {formatDateTime(activity.endTime)}
         </div>
-        {event.location && (
+        {activity.location && (
           <div className="mb-3">
             <BsGeoAlt className="me-2" />
-            {event.location}
+            {activity.location}
           </div>
         )}
-        {event.description && (
+        {activity.description && (
           <div className="mb-3">
-            <p>{event.description}</p>
+            <p>{activity.description}</p>
           </div>
         )}
       </Modal.Body>
