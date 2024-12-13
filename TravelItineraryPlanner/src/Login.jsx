@@ -7,7 +7,7 @@
     function Login() {
         const [email, setEmail] = useState();
         const [password, setPassword] = useState();
-        const [message, setMessage] = useState(); // for messages
+        const [message, setMessage] = useState(); // for messages ni
         const navigate = useNavigate();
 
         const handleSubmit = async (e) => {
@@ -16,17 +16,17 @@
                 const response = await axiosInstance.post("/login", { email, password });
                 if (response.data.token) {
                     console.log('JWT Token:', response.data.token);
-                    console.log('Calendar ID:', response.data.user.calendarId); // Changed from calendar._id to calendarId
+                    console.log('Calendar ID:', response.data.user.calendarId);
 
                     localStorage.setItem('token', response.data.token);
-                    localStorage.setItem('calendarId', response.data.user.calendarId); // Changed from calendar._id to calendarId
+                    localStorage.setItem('calendarId', response.data.user.calendarId);
 
                     navigate('/home');
                 } else {
                     setMessage(response.data.error);
                 }
             } catch (err) {
-                console.error('Login error:', err.response?.data || err); // Add this line for debugging
+                console.error('Login error:', err.response?.data || err);
                 setMessage(err.response?.data?.error || "Login failed");
             }
         };
@@ -68,13 +68,13 @@
                     </form>
                     <div className="d-flex justify-content-between align-items-center mb-3">
                         <p className="mb-0">
-                            <Link to="/forgot-password" className="create-link bg-light text-decoration-none">
+                            <Link to="/forgot-password" className="create-link bg-light">
                                 Forgot password
                             </Link>
                         </p>
                         
                         <div className="d-flex align-items-center">
-                            <Link to="/register" className="create-link bg-light text-decoration-none ms-2">
+                            <Link to="/register" className="create-link bg-light ms-2">
                                 Create an account
                             </Link>
                         </div>

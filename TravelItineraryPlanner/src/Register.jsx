@@ -63,7 +63,7 @@ function Register() {
 
     return (
         <div className="register-container d-flex justify-content-center align-items-center bg-secondary vh-100">
-            <div className="bg-white p-3 rounded w-75 col-lg-6 col-md-8 col-sm-12">
+            <div className="bg-white p-3 rounded col-lg-4 col-md-6 col-sm-12">
                 <h3>Create an account.</h3>
                 {message && <div className="alert alert-danger">{message}</div>}
                 <form onSubmit={handleSubmit}>
@@ -157,7 +157,7 @@ function Register() {
                     </button>
                 </form>
                 <div className="haveaccountedy d-flex justify-content-center align-items-center mb-3">
-                    <p className="mb-0">Already Have an Account? </p>
+                    <p className="mb-0">Already have an account? </p>
                     <Link to="/login" className="login-link bg-light text-decoration-none ms-2 m-0">
                         Login
                     </Link>

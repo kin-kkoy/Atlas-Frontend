@@ -23,9 +23,10 @@
 
 .create-link {
     color: #F43E4A;
+    text-decoration: none;
 }
 
 .create-link:hover {
     color: #F43E4A;
-    text-decoration: underline !important;
+    text-decoration: underline;
 }
