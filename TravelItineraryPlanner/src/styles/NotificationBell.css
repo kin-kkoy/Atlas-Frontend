@@ -1,0 +1,63 @@
+.notification-bell {
+    position: relative;
+    color: #333;
+}
+
+.notification-bell .badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 0.7rem;
+    padding: 0.25em 0.4em;
+}
+
+.notification-menu {
+    width: 300px;
+    padding: 0;
+    max-height: 400px;
+}
+
+.notification-header {
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+    background-color: #f8f9fa;
+}
+
+.notification-list {
+    max-height: 350px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.notification-item.unread {
+    background-color: #f0f7ff;
+}
+
+.notification-item.read {
+    background-color: #fff;
+}
+
+.notification-content {
+    margin: 0;
+}
+
+.notification-text {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #333;
+}
+
+.notification-time {
+    display: block;
+    color: #666;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
