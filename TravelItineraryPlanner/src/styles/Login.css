@@ -1,0 +1,31 @@
+.donthaveaccount {
+    text-align: center;
+    margin-top: 20px; /* optional: for spacing */
+}
+
+.login-container input::placeholder {
+    color: #8f8f8f;
+}
+
+.btn-login {
+    background-color: #4BA4B4;
+    border: 1px solid transparent;
+    font-weight: 500;
+    color: #F6F6F6;
+}
+
+.btn-login:hover {
+    background-color: #318796;
+    border-color: #4BA4B4;
+    transition: 0.3s ease;
+    color: #F6F6F6;
+}
+
+.create-link {
+    color: #F43E4A;
+}
+
+.create-link:hover {
+    color: #F43E4A;
+    text-decoration: underline !important;
+}

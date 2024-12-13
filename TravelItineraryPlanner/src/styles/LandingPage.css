@@ -1,5 +1,6 @@
 body {
     background-color: #F6F6F6;
+    color: #131A1B;
 }
 
 .navbar {
@@ -19,13 +20,14 @@ body {
 }
 
 .btn-login {
-    color: #131A1B;
-    border: 1px solid #131A1B;
+    color: #8f8f8f;
+    border: 1px solid #8f8f8f;
+    background-color: transparent;
 }
 
 .btn-login:hover {
     color: #4BA4B4;
-    background-color: none;
+    background-color: transparent;
     border: 1px solid #4BA4B4;
     transition: 0.3s ease;
 }

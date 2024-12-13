@@ -74,15 +74,6 @@ function App() {
                         <Link to="/login" className="btn btn-login text-decoration-none me-3">
                             Login
                         </Link>
-
-                        {/* <button
-                            type="button"
-                            className="btn btn-get-started btn-link"
-                            data-bs-toggle="modal"
-                            data-bs-target="#signupModal"
-                        >
-                            Get Started
-                        </button> */}
                         <Link to="/register" className="btn btn-get-started btn-default text-decoration-none">
                             Get Started
                         </Link>
@@ -97,14 +88,6 @@ function App() {
                         Effortlessly plan your travels with friends and loved ones with <b>ATLAS</b> that
                         provides all the tools you need.
                     </h5>
-                    {/* <button
-                        type="button"
-                        className="btn btn-get-started btn-link"
-                        data-bs-toggle="modal"
-                        data-bs-target="#signupModal"
-                    >
-                        Get Started
-                    </button> */}
                     <Link to="/register" className="btn btn-get-started btn-default text-decoration-none">
                         Get Started
                     </Link>

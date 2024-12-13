@@ -1,0 +1,103 @@
+.haveaccountedy {
+    text-align: center;
+    margin-top: 20px; /* optional: for spacing */
+}
+
+.register-container input::placeholder {
+    color: #8f8f8f;
+}
+
+.register-container input:focus {
+    color: #8f8f8f;
+    border-color: #F43E4A;
+    outline: none;
+    box-shadow: none;
+}
+
+/* Ensure the placeholder color remains #8f8f8f for both types of input */
+.register-container input::placeholder {
+    color: #8f8f8f;
+}
+
+/* Keep the placeholder color consistent when focused */
+.register-container input:focus::placeholder {
+    color: #8f8f8f; /* Ensure placeholder color stays the same on focus */
+}
+
+/* Ensure the color and border-color of the input remain consistent when toggling between password and text */
+.register-container input {
+    color: #8f8f8f; /* Placeholder and text color */
+    border-color: #8f8f8f; /* Border color */
+}
+
+/* Password input focus styles */
+.register-container input:focus {
+    color: #8f8f8f; /* Maintain the text color */
+    border-color: #F43E4A; /* Border color */
+    outline: none;
+    box-shadow: none; /* Remove default focus outline */
+}
+
+/* Style for password visibility toggle button (eye icon) */
+.password-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(-13%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #8f8f8f;
+}
+
+/* Ensure the eye icon is appropriately sized */
+.password-toggle-btn svg {
+    font-size: 1.2rem;
+}
+
+/* Optional: Style the password field when it's focused */
+.form-control:focus {
+    border-color: #318796;
+    box-shadow: 0 0 5px rgba(49, 135, 150, 0.5);
+}
+
+/* Styling for alert message */
+.alert {
+    margin-top: 10px;
+    padding: 10px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.password-requirements {
+    list-style-type: none;
+    margin-top: 10px;
+}
+
+.password-requirements li {
+    font-size: 14px;
+}
+
+/* Button Styles */
+
+.btn-create {
+    background-color: #4BA4B4;
+    border: 1px solid transparent;
+    font-weight: 500;
+    color: #F6F6F6 !important;
+}
+
+.btn-create:hover {
+    background-color: #318796;
+    border-color: #4BA4B4;
+    transition: 0.3s ease;
+    color: #F6F6F6;
+}
+
+.login-link {
+    color: #F43E4A;
+}
+
+.login-link:hover {
+    color: #de0c1a;
+}
