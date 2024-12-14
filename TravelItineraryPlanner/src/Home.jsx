@@ -14,6 +14,7 @@ import {
 } from "./utils/socket";
 import EventDetailsModal from "./components/EventDetailsModal";
 import NotificationBell from "./components/NotificationBell";
+import socket from './utils/socket';
 
 function Home() {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ function Home() {
   const [allEvents, setAllEvents] = useState([]);
   const [selectedEventFilter, setSelectedEventFilter] = useState(null);
   const [sharedEvents, setSharedEvents] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const fetchAllEvents = async () => {
@@ -367,38 +369,98 @@ function Home() {
   const handleUpdateEvent = async (updatedEvent) => {
     try {
       const calendarId = localStorage.getItem("calendarId");
-      await axiosInstance.put(`/api/events/${calendarId}/events/${updatedEvent._id}`, updatedEvent);
       
-      // Update the events in state
-      setAllEvents(prevEvents =>
-        prevEvents.map(event =>
-          event._id === updatedEvent._id ? updatedEvent : event
-        )
+      const eventPayload = {
+        ...updatedEvent,
+        title: updatedEvent.title,
+        description: updatedEvent.description,
+        date: new Date(updatedEvent.date),
+        isShared: updatedEvent.isShared,
+        sharedFrom: updatedEvent.sharedFrom,
+        sharedPermission: updatedEvent.sharedPermission,
+        activities: updatedEvent.activities.map(activity => ({
+          ...activity,
+          startTime: new Date(activity.startTime),
+          endTime: new Date(activity.endTime)
+        }))
+      };
+
+      const response = await axiosInstance.put(
+        `/api/events/${calendarId}/events/${updatedEvent._id}`, 
+        eventPayload
       );
       
-      // Close the details modal
-      setShowEventDetails(false);
+      const updatedEventData = response.data;
+
+      // Update both shared and regular events states
+      const updateEventInList = (events, updatedEvent) => {
+        return events.map(event => {
+          if (event._id === updatedEvent._id || 
+              (event.sharedFrom && 
+               (event.sharedFrom._id === updatedEvent._id || 
+                event.sharedFrom._id === updatedEvent.sharedFrom))) {
+            return updatedEvent;
+          }
+          return event;
+        });
+      };
+
+      setSharedEvents(prevEvents => updateEventInList(prevEvents, updatedEventData));
+      setAllEvents(prevEvents => updateEventInList(prevEvents, updatedEventData));
       
-      // Refresh the events for the current date
+      setShowEventDetails(false);
+
+      // Refresh current date's events
       const formattedDate = date.toLocaleDateString("en-CA");
-      const response = await axiosInstance.get(
+      const eventsResponse = await axiosInstance.get(
         `/api/events/${calendarId}/by-date`,
         {
-          params: {
-            date: formattedDate,
-          },
+          params: { date: formattedDate }
         }
       );
 
       setEvents(prevEvents => ({
         ...prevEvents,
-        [formattedDate]: response.data,
+        [formattedDate]: eventsResponse.data
       }));
+
     } catch (error) {
       console.error("Error updating event:", error);
-      setError("Failed to update event");
+      setError(error.response?.data?.error || "Failed to update event");
     }
   };
+
+  useEffect(() => {
+    socket.on('eventUpdated', (updatedEventData) => {
+      // Update shared events
+      setSharedEvents(prevEvents =>
+        prevEvents.map(event =>
+          event._id === updatedEventData._id || 
+          (event.sharedFrom && event.sharedFrom._id === updatedEventData._id) ? 
+          updatedEventData : event
+        )
+      );
+
+      // Update regular events
+      setAllEvents(prevEvents =>
+        prevEvents.map(event =>
+          event._id === updatedEventData._id || 
+          (event.sharedFrom && event.sharedFrom._id === updatedEventData._id) ? 
+          updatedEventData : event
+        )
+      );
+    });
+
+    socket.on('eventNotification', (notification) => {
+      // Add notification handling logic here
+      setNotifications(prev => [...prev, notification]);
+    });
+
+    return () => {
+      socket.off('eventUpdated');
+      socket.off('eventNotification');
+    };
+  }, []);
 
   return (
     <div className="container-fluid p-4">

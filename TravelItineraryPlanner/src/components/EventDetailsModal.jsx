@@ -29,7 +29,15 @@ function EventDetailsModal({ show, handleClose, event, handleDelete, handleUpdat
   };
 
   const handleSaveEdit = async () => {
-    await handleUpdate(editedEvent);
+    const eventToUpdate = {
+      ...editedEvent,
+      activities: editedEvent.activities.map(activity => ({
+        ...activity,
+        startTime: new Date(activity.startTime),
+        endTime: new Date(activity.endTime)
+      }))
+    };
+    await handleUpdate(eventToUpdate);
     setIsEditing(false);
   };
 
