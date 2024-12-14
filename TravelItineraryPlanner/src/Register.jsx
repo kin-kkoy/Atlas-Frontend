@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from './utils/axios';
 import "./styles/Register.css";
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import FontAwesome eye icons
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function Register() {
     const [name, setName] = useState();
@@ -13,16 +13,14 @@ function Register() {
     const [passwordVisible, setPasswordVisible] = useState(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
     
-    // Validation states
     const [isLengthValid, setIsLengthValid] = useState(false);
     const [isCharacterValid, setIsCharacterValid] = useState(false);
     const [isNumberValid, setIsNumberValid] = useState(false);
     const [isSpecialCharValid, setIsSpecialCharValid] = useState(false);
-    const [isFocused, setIsFocused] = useState(false); // Track if the password field is focused
+    const [isFocused, setIsFocused] = useState(false);
     
     const navigate = useNavigate();
 
-    // Regular Expressions
     const lengthRegEx = /.{8,}/;
     const characterRegEx = /[a-zA-Z]/;
     const numberRegEx = /[0-9]/;
@@ -135,7 +133,7 @@ function Register() {
 
                     <div className="mb-5 position-relative">
                         <label htmlFor="confirmPassword">
-                            <strong>Confirm Password</strong>
+                            <h6>Confirm Password</h6>
                         </label>
                         <input
                             type={confirmPasswordVisible ? "text" : "password"}
