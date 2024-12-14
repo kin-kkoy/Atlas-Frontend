@@ -149,7 +149,7 @@ function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/landingPage");
   };
 
   const handleDateChange = (date) => {
