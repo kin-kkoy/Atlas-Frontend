@@ -1,0 +1,79 @@
+body {
+    background-color: #F6F6F6;
+    color: #131A1B;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.navbar-brand img {
+    width: auto;
+    max-height: 30px;
+}
+
+.btn {
+    color: #131A1B;
+}
+
+.btn-login {
+    color: #8f8f8f;
+    border: 1px solid #8f8f8f;
+    background-color: transparent;
+}
+
+.btn-login:hover {
+    color: #4BA4B4;
+    background-color: transparent;
+    border: 1px solid #4BA4B4;
+    transition: 0.3s ease;
+}
+
+.btn-get-started {
+    background-color: #4BA4B4;
+    border: 1px solid transparent;
+    font-weight: 500;
+    color: #F6F6F6;
+}
+
+.btn-get-started:hover {
+    background-color: #318796;
+    border-color: #4BA4B4;
+    transition: 0.3s ease;
+    color: #F6F6F6;
+}
+
+.hero-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    position: relative;
+    flex-direction: column;
+}
+
+.hero-section h1 {
+    font-size: 56px;
+    font-weight: bold;
+    font-family: "Bebas Neue", sans-serif;
+}
+
+.hero-section h5 {
+    margin-top: 24px;
+    color: #8f8f8f;
+}
+
+.atlas-gradient {
+    background: linear-gradient(to right, #4BA4B4, #F43E4A);
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: bold;
+    margin: 0;
+}
+
+.hero-section .btn-get-started {
+    margin-top: 48px;
+}

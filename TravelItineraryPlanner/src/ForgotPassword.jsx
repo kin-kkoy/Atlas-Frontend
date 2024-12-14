@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axiosInstance from './utils/axios';
 import { Link, useNavigate } from 'react-router-dom';
+import "./styles/ForgotPassword.css"
 
 function ForgotPassword() {
     const [email, setEmail] = useState('');
@@ -13,7 +14,6 @@ function ForgotPassword() {
             .then((response) => {
                 setMessage('Reset token sent! Redirecting to reset page...');
 
-                // Redirect to resetPassword page after 3 secs if request is successful
                 setTimeout(() => {
                     navigate('/reset-password');
                 }, 3000);
@@ -26,26 +26,26 @@ function ForgotPassword() {
 
     return (
         <div className="d-flex justify-content-center align-items-center bg-secondary vh-100">
-            <div className="bg-white p-3 rounded w-25">
-                <h2>Forgot Password</h2>
+            <div className="forgot-password-container bg-white p-3 rounded w-25">
+                <h3>Forgot Password</h3>
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
+                    <div className="mb-4 mt-3">
                         <label htmlFor="email">
-                            <strong>Email</strong>
+                            <h6>Email</h6>
                         </label>
                         <input
                             type="email"
-                            placeholder="Email..."
-                            className="form-control rounded-0"
+                            placeholder="Email"
+                            className="form-control"
                             onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
-                    <button type="submit" className="btn btn-warning w-100 rounded-0">
+                    <button type="submit" className="btn btn-create w-100 btn-default text-decoration-none">
                         Send Reset Link
                     </button>
-                    <p>
+                    <p className="haveaccountedy d-flex justify-content-center align-items-center mb-3">
                         Received code? 
-                        <Link to="/reset-password"> Click here to reset</Link>
+                        <Link to="/reset-password" className="reset-link ms-2"> Click here to reset</Link>
                     </p>
                 </form>
                 {message && <p className="text-center">{message}</p>}
