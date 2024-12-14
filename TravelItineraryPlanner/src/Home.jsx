@@ -6,7 +6,6 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import axiosInstance from "./utils/axios";
 import EventModal from "./components/EventModal";
 import "./styles/Calendar.css";
-import ShareEventModal from "./components/ShareEventModal";
 import CalendarSidebar from "./components/CalendarSidebar";
 import {
   joinCalendar,
@@ -15,14 +14,13 @@ import {
 } from "./utils/socket";
 import EventDetailsModal from "./components/EventDetailsModal";
 import NotificationBell from "./components/NotificationBell";
+import socket from './utils/socket';
 
 function Home() {
   const navigate = useNavigate();
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState({});
   const [showModal, setShowModal] = useState(false);
-  const [showShareEventModal, setShowShareEventModal] = useState(false);
-  const [eventToShare, setEventToShare] = useState(null);
   const handleCloseModal = () => setShowModal(false);
   const handleShowModal = () => setShowModal(true);
   const [error, setError] = useState("");
@@ -36,6 +34,7 @@ function Home() {
   const [allEvents, setAllEvents] = useState([]);
   const [selectedEventFilter, setSelectedEventFilter] = useState(null);
   const [sharedEvents, setSharedEvents] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
     const fetchAllEvents = async () => {
@@ -159,32 +158,39 @@ function Home() {
 
   const handleSave = async (eventData) => {
     try {
-        const calendarId = localStorage.getItem("calendarId");
-        // First save the event
-        const response = await axiosInstance.post(`/api/events/${calendarId}/add`, eventData);
-        const savedEvent = response.data.event;
+      const calendarId = localStorage.getItem("calendarId");
+      
+      // Prepare the event data including sharing information
+      const eventPayload = {
+        ...eventData,
+        isShared: eventData.isShared, // Changed from showShareSection
+        shareWithEmail: eventData.shareWithEmail,
+        sharePermission: eventData.sharePermission
+      };
 
-        // If event is marked for sharing, share it
-        if (eventData.isShared && eventData.shareWithEmail) {
-            await axiosInstance.post('/api/events/share', {
-                eventId: savedEvent._id,
-                recipientEmail: eventData.shareWithEmail,
-                permission: eventData.sharePermission
-            });
-        }
+      // Save the event with sharing information included
+      const response = await axiosInstance.post(
+        `/api/events/${calendarId}/add`, 
+        eventPayload
+      );
+      
+      const savedEvent = response.data.event;
 
-        // Update allEvents state with the new event
-        setAllEvents(prevEvents => [...prevEvents, savedEvent]);
+      // Update allEvents state with the new event
+      setAllEvents(prevEvents => [...prevEvents, savedEvent]);
 
-        // If it's a shared event, update sharedEvents state
-        if (eventData.isShared) {
-            const sharedEventResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
-            setSharedEvents(sharedEventResponse.data);
-        }
+      // If it's a shared event, update sharedEvents state
+      if (eventData.isShared) {
+        const sharedEventResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
+        setSharedEvents(sharedEventResponse.data);
+      }
+
+      // Close the modal
+      handleCloseModal();
 
     } catch (error) {
-        console.error("Error saving/sharing event:", error);
-        setError(error.response?.data?.error || "Failed to save/share event");
+      console.error("Error saving event:", error);
+      setError(error.response?.data?.error || "Failed to save event");
     }
   };
 
@@ -327,11 +333,6 @@ function Home() {
     );
   };
 
-  const handleShareEvent = (event) => {
-    setEventToShare(event);
-    setShowShareEventModal(true);
-  };
-
   const handleEventClick = async (event) => {
     try {
         const calendarId = localStorage.getItem("calendarId");
@@ -365,18 +366,108 @@ function Home() {
     }
   };
 
+  const handleUpdateEvent = async (updatedEvent) => {
+    try {
+      const calendarId = localStorage.getItem("calendarId");
+      
+      const eventPayload = {
+        ...updatedEvent,
+        title: updatedEvent.title,
+        description: updatedEvent.description,
+        date: new Date(updatedEvent.date),
+        isShared: updatedEvent.isShared,
+        sharedFrom: updatedEvent.sharedFrom,
+        sharedPermission: updatedEvent.sharedPermission,
+        activities: updatedEvent.activities.map(activity => ({
+          ...activity,
+          startTime: new Date(activity.startTime),
+          endTime: new Date(activity.endTime)
+        }))
+      };
+
+      const response = await axiosInstance.put(
+        `/api/events/${calendarId}/events/${updatedEvent._id}`, 
+        eventPayload
+      );
+      
+      const updatedEventData = response.data;
+
+      // Update both shared and regular events states
+      const updateEventInList = (events, updatedEvent) => {
+        return events.map(event => {
+          if (event._id === updatedEvent._id || 
+              (event.sharedFrom && 
+               (event.sharedFrom._id === updatedEvent._id || 
+                event.sharedFrom._id === updatedEvent.sharedFrom))) {
+            return updatedEvent;
+          }
+          return event;
+        });
+      };
+
+      setSharedEvents(prevEvents => updateEventInList(prevEvents, updatedEventData));
+      setAllEvents(prevEvents => updateEventInList(prevEvents, updatedEventData));
+      
+      setShowEventDetails(false);
+
+      // Refresh current date's events
+      const formattedDate = date.toLocaleDateString("en-CA");
+      const eventsResponse = await axiosInstance.get(
+        `/api/events/${calendarId}/by-date`,
+        {
+          params: { date: formattedDate }
+        }
+      );
+
+      setEvents(prevEvents => ({
+        ...prevEvents,
+        [formattedDate]: eventsResponse.data
+      }));
+
+    } catch (error) {
+      console.error("Error updating event:", error);
+      setError(error.response?.data?.error || "Failed to update event");
+    }
+  };
+
+  useEffect(() => {
+    socket.on('eventUpdated', (updatedEventData) => {
+      // Update shared events
+      setSharedEvents(prevEvents =>
+        prevEvents.map(event =>
+          event._id === updatedEventData._id || 
+          (event.sharedFrom && event.sharedFrom._id === updatedEventData._id) ? 
+          updatedEventData : event
+        )
+      );
+
+      // Update regular events
+      setAllEvents(prevEvents =>
+        prevEvents.map(event =>
+          event._id === updatedEventData._id || 
+          (event.sharedFrom && event.sharedFrom._id === updatedEventData._id) ? 
+          updatedEventData : event
+        )
+      );
+    });
+
+    socket.on('eventNotification', (notification) => {
+      // Add notification handling logic here
+      setNotifications(prev => [...prev, notification]);
+    });
+
+    return () => {
+      socket.off('eventUpdated');
+      socket.off('eventNotification');
+    };
+  }, []);
+
   return (
     <div className="container-fluid p-4">
       <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
         <h1 className="mb-2 mb-md-0">Travel Itinerary Planner</h1>
         <div className="d-flex gap-2 align-items-center">
             <NotificationBell />
-            <button
-                className="btn btn-info"
-                onClick={() => setShowShareEventModal(true)}
-            >
-                Share Event
-            </button>
             <button className="btn btn-danger" onClick={handleLogout}>
                 Logout
             </button>
@@ -424,7 +515,7 @@ function Home() {
             </div>
           </div>
         </div>
-        <div className="calendar-main">
+        <div className={`calendar-main ${showEventDetails ? 'with-details' : ''}`}>
           <Calendar
             value={date}
             onChange={handleDateChange}
@@ -446,12 +537,7 @@ function Home() {
         handleClose={() => setShowEventDetails(false)}
         event={selectedEvent}
         handleDelete={handleDeleteEvent}
-        handleShare={handleShareEvent}
-      />
-      <ShareEventModal
-        show={showShareEventModal}
-        handleClose={() => setShowShareEventModal(false)}
-        event={eventToShare}
+        handleUpdate={handleUpdateEvent}
       />
     </div>
   );
