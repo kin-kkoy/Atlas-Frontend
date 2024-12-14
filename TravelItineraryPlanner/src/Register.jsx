@@ -67,7 +67,7 @@ function Register() {
                 <form onSubmit={handleSubmit}>
                     <div className="mb-3 mt-4">
                         <label htmlFor="username">
-                            <strong>Username</strong>
+                            <h6>Username</h6>
                         </label>
                         <input
                             type="text"
@@ -80,7 +80,7 @@ function Register() {
                     </div>
                     <div className="mb-3">
                         <label htmlFor="email">
-                            <strong>Email</strong>
+                            <h6>Email</h6>
                         </label>
                         <input
                             type="email"
@@ -93,7 +93,7 @@ function Register() {
                     </div>
                     <div className="mb-3 position-relative">
                         <label htmlFor="password">
-                            <strong>Password</strong>
+                            <h6>Password</h6>
                         </label>
                         <input
                             type={passwordVisible ? "text" : "password"}
