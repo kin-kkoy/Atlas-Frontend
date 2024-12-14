@@ -161,7 +161,7 @@ function Home() {
       // Prepare the event data including sharing information
       const eventPayload = {
         ...eventData,
-        isShared: eventData.showShareSection, // Use the checkbox state
+        isShared: eventData.isShared, // Changed from showShareSection
         shareWithEmail: eventData.shareWithEmail,
         sharePermission: eventData.sharePermission
       };
@@ -178,7 +178,7 @@ function Home() {
       setAllEvents(prevEvents => [...prevEvents, savedEvent]);
 
       // If it's a shared event, update sharedEvents state
-      if (eventData.showShareSection) {
+      if (eventData.isShared) {
         const sharedEventResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
         setSharedEvents(sharedEventResponse.data);
       }

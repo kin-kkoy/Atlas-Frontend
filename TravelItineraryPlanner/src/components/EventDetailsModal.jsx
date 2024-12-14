@@ -20,7 +20,6 @@ function EventDetailsModal({ show, handleClose, event, handleDelete, handleUpdat
 
   // Check if user has edit permission
   const canEdit = !event.isShared || (event.isShared && event.sharedPermission === 'edit');
-
   const handleEditClick = () => {
     if (!canEdit) {
       // Show error or notification that user doesn't have edit permission

@@ -93,8 +93,8 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
       date: selectedDate,
       activities,
       isShared: showShareSection,
-      shareWithEmail: showShareSection ? shareWithEmail : null,
-      sharePermission: showShareSection ? sharePermission : null
+      shareWithEmail: showShareSection ? shareWithEmail : '',
+      sharePermission: showShareSection ? sharePermission : 'view'
     };
     
     handleSave(eventData);
@@ -103,7 +103,10 @@ function EventModal({ show, onHide, handleSave, selectedDate }) {
 
   const handleShareSectionChange = (e) => {
     setShowShareSection(e.target.checked);
-    setIsShared(e.target.checked);
+    if(!e.target.checked) {
+      setShareWithEmail('');
+      setSharePermission('view');
+    }
   };
 
   return (
