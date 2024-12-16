@@ -63,14 +63,6 @@ function App() {
                     </a>
                     <h5 className="atlas-gradient">TLAS</h5>
                     <div className="d-flex ms-auto">
-                        {/* <button
-                            type="button"
-                            className="btn btn-login btn-link me-3"
-                            data-bs-toggle="modal"
-                            data-bs-target="#loginModal"
-                        >
-                            Login
-                        </button> */}
                         <Link to="/login" className="btn btn-login text-decoration-none me-3">
                             Login
                         </Link>

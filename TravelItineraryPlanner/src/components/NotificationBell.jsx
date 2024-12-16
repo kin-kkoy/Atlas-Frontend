@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Badge, Dropdown } from 'react-bootstrap';
 import { BsBell } from 'react-icons/bs';
 import axiosInstance from '../utils/axios';
-import '../styles/NotificationBell.css';  // Updated import path
+import '../styles/NotificationBell.css';
 
 function NotificationBell() {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
+    const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -51,18 +52,24 @@ function NotificationBell() {
     };
 
     return (
-        <Dropdown>
-            <Dropdown.Toggle variant="link" className="notification-bell">
-                <BsBell size={20} />
+        <Dropdown 
+            show={isOpen} 
+            onToggle={(isOpen) => setIsOpen(isOpen)}
+        >
+            <div 
+                className="notification-bell" 
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <BsBell 
+                    size={20}
+                    className="bell-icon"
+                />
                 {unreadCount > 0 && (
                     <Badge bg="danger">{unreadCount}</Badge>
                 )}
-            </Dropdown.Toggle>
+            </div>
 
             <Dropdown.Menu className="notification-menu">
-                <div className="notification-header">
-                    <h6 className="mb-0">Notifications</h6>
-                </div>
                 <div className="notification-list">
                     {notifications.length === 0 ? (
                         <Dropdown.Item>No notifications</Dropdown.Item>
