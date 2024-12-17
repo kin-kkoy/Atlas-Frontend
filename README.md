@@ -27,7 +27,7 @@ Atlas is a travel itinerary planner designed to help users effortlessly plan the
 
 1. Clone the repository:
    ```bash
-   git clone <frontend-repo-url>
+   git clone <https://github.com/kin-kkoy/Atlas-Frontend.git>
    cd Atlas-FrontEnd/TravelItineraryPlanner   ```
 
 2. Install dependencies:
