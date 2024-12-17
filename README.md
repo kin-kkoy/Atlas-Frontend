@@ -45,6 +45,15 @@ Atlas is a travel itinerary planner designed to help users effortlessly plan the
    - `react-icons`
    - `react-router-dom`
    - `socket.io-client`
+  
+   If an error "Failed to resolve import "intl-tel-input" from "src/LandingPage.jsx". Does the     file exist?" pops up (see image below)
+![image](https://github.com/user-attachments/assets/e9204dec-1977-4c7b-84e6-d83039087bc5)
+
+   Run: 
+   ```bash 
+   npm uninstall intl-tel-input
+   npm i intl-tel-input@latest   ```
+
 
    Install them using:
    ```bash
