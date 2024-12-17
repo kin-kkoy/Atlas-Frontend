@@ -1,0 +1,85 @@
+.donthaveaccount {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.login-container input::placeholder {
+    color: #8f8f8f;
+}
+.register-container input:focus {
+    color: #8f8f8f;
+    outline: none;
+}
+
+.register-container input::placeholder {
+    color: #8f8f8f;
+}
+
+.register-container input:focus::placeholder {
+    color: #8f8f8f;
+}
+
+.register-container input {
+    color: #8f8f8f;
+    border-color: #8f8f8f;
+}
+
+.register-container input:focus {
+    color: #8f8f8f;
+    outline: none;
+}
+
+.mb-3.position-relative {
+    position: relative;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    top: 50%;
+    right: 10px;
+    transform: translateY(1%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #8f8f8f;
+}
+
+.password-toggle-btn svg {
+    font-size: 1.2rem;
+}
+
+.form-control:focus {
+    border-color: #318796;
+    box-shadow: 0 0 5px rgba(49, 135, 150, 0.5);
+}
+
+.alert {
+    margin-top: 10px;
+    padding: 5px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.btn-login {
+    background-color: #4BA4B4;
+    border: 1px solid transparent;
+    font-weight: 500;
+    color: #F6F6F6;
+}
+
+.btn-login:hover {
+    background-color: #318796;
+    border-color: #4BA4B4;
+    transition: 0.3s ease;
+    color: #F6F6F6;
+}
+
+.create-link {
+    color: #F43E4A;
+    text-decoration: none;
+}
+
+.create-link:hover {
+    color: #F43E4A;
+    text-decoration: underline;
+}

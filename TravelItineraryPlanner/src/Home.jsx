@@ -1,5 +1,10 @@
+import React from "react";
+import { useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { BsCalendar3 } from "react-icons/bs";
+import { FiTrash2 } from "react-icons/fi";
+import { FaBars, FaTimes } from "react-icons/fa";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -35,6 +40,11 @@ function Home() {
   const [selectedEventFilter, setSelectedEventFilter] = useState(null);
   const [sharedEvents, setSharedEvents] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarVisible(prev => !prev);
+  };
 
   useEffect(() => {
     const fetchAllEvents = async () => {
@@ -44,13 +54,10 @@ function Home() {
                 throw new Error("Calendar ID not found");
             }
             
-            // Fetch regular events
             const response = await axiosInstance.get(`/api/events/${calendarId}/all`);
-            // Filter out shared events from regular events
             const regularEvents = response.data.filter(event => !event.isShared);
             setAllEvents(regularEvents);
             
-            // Fetch shared events
             const sharedResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
             setSharedEvents(sharedResponse.data);
             
@@ -95,7 +102,7 @@ function Home() {
       setSelectedEvent({
         ...event,
         activities: response.data,
-        selectedActivity: clickedActivity // Add the clicked activity
+        selectedActivity: clickedActivity
       });
       setShowEventDetails(true);
     } catch (error) {
@@ -149,7 +156,7 @@ function Home() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
-    navigate("/login");
+    navigate("/landingPage");
   };
 
   const handleDateChange = (date) => {
@@ -160,15 +167,13 @@ function Home() {
     try {
       const calendarId = localStorage.getItem("calendarId");
       
-      // Prepare the event data including sharing information
       const eventPayload = {
         ...eventData,
-        isShared: eventData.isShared, // Changed from showShareSection
+        isShared: eventData.isShared,
         shareWithEmail: eventData.shareWithEmail,
         sharePermission: eventData.sharePermission
       };
 
-      // Save the event with sharing information included
       const response = await axiosInstance.post(
         `/api/events/${calendarId}/add`, 
         eventPayload
@@ -176,16 +181,13 @@ function Home() {
       
       const savedEvent = response.data.event;
 
-      // Update allEvents state with the new event
       setAllEvents(prevEvents => [...prevEvents, savedEvent]);
 
-      // If it's a shared event, update sharedEvents state
       if (eventData.isShared) {
         const sharedEventResponse = await axiosInstance.get(`/api/events/${calendarId}/shared`);
         setSharedEvents(sharedEventResponse.data);
       }
 
-      // Close the modal
       handleCloseModal();
 
     } catch (error) {
@@ -199,7 +201,6 @@ function Home() {
         const calendarId = localStorage.getItem("calendarId");
         const response = await axiosInstance.delete(`/api/events/${calendarId}/events/${eventId}`);
 
-        // Remove from events state
         const formattedDate = date.toLocaleDateString("en-CA");
         setEvents((prevEvents) => {
             const updatedEvents = {
@@ -214,12 +215,10 @@ function Home() {
             return updatedEvents;
         });
 
-        // Remove from allEvents state
         setAllEvents((prevAllEvents) => 
             prevAllEvents.filter(event => event._id !== eventId)
         );
 
-        // Remove from sharedEvents state if it exists there
         setSharedEvents((prevSharedEvents) =>
             prevSharedEvents.filter(event => event._id !== eventId)
         );
@@ -263,7 +262,6 @@ function Home() {
     fetchEvents();
   }, [date]);
 
-  // Add this function to get the current date's events
   const getCurrentDateEvents = () => {
     const formattedDate = date.toLocaleDateString("en-CA");
     return events[formattedDate] || [];
@@ -336,11 +334,9 @@ function Home() {
   const handleEventClick = async (event) => {
     try {
         const calendarId = localStorage.getItem("calendarId");
-        // Fetch activities for the selected event
         const response = await axiosInstance.get(`/api/events/${calendarId}/events/${event._id}/activities`);
         
         if (event.isShared) {
-            // Update shared events
             setSharedEvents(prevSharedEvents => 
                 prevSharedEvents.map(e => 
                     e._id === event._id 
@@ -349,7 +345,6 @@ function Home() {
                 )
             );
         } else {
-            // Update regular events
             setAllEvents(prevAllEvents => 
                 prevAllEvents.map(e => 
                     e._id === event._id 
@@ -392,7 +387,6 @@ function Home() {
       
       const updatedEventData = response.data;
 
-      // Update both shared and regular events states
       const updateEventInList = (events, updatedEvent) => {
         return events.map(event => {
           if (event._id === updatedEvent._id || 
@@ -410,7 +404,6 @@ function Home() {
       
       setShowEventDetails(false);
 
-      // Refresh current date's events
       const formattedDate = date.toLocaleDateString("en-CA");
       const eventsResponse = await axiosInstance.get(
         `/api/events/${calendarId}/by-date`,
@@ -432,7 +425,6 @@ function Home() {
 
   useEffect(() => {
     socket.on('eventUpdated', (updatedEventData) => {
-      // Update shared events
       setSharedEvents(prevEvents =>
         prevEvents.map(event =>
           event._id === updatedEventData._id || 
@@ -441,7 +433,6 @@ function Home() {
         )
       );
 
-      // Update regular events
       setAllEvents(prevEvents =>
         prevEvents.map(event =>
           event._id === updatedEventData._id || 
@@ -452,7 +443,6 @@ function Home() {
     });
 
     socket.on('eventNotification', (notification) => {
-      // Add notification handling logic here
       setNotifications(prev => [...prev, notification]);
     });
 
@@ -463,66 +453,62 @@ function Home() {
   }, []);
 
   return (
-    <div className="container-fluid p-4">
-      <div className="d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <h1 className="mb-2 mb-md-0">Travel Itinerary Planner</h1>
-        <div className="d-flex gap-2 align-items-center">
-            <NotificationBell />
-            <button className="btn btn-danger" onClick={handleLogout}>
-                Logout
-            </button>
-        </div>
-      </div>
-      <div className="calendar-layout">
-        <div className="calendar-sidebar">
-          <div className="sidebar-section">
-            <h5>Favorites</h5>
-            <div className="sidebar-list">
-              {/* Favorites will be added dynamically */}
-            </div>
-          </div>
-          <div className="sidebar-section">
-            <h5>My Events</h5>
-            <div className="sidebar-list">
-                {allEvents.map((event) => (
-                    <div 
-                        key={event._id} 
-                        className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
-                        onClick={() => handleEventClick(event)}
-                    >
-                        <div className="event-title">{event.title}</div>
-                    </div>
-                ))}
-            </div>
-          </div>
-          <div className="sidebar-section">
-            <h5>Shared Events</h5>
-            <div className="sidebar-list">
-                {sharedEvents.map((event) => (
-                    <div 
-                        key={event._id} 
-                        className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
-                        onClick={() => handleEventClick(event)}
-                    >
-                        <div className="event-title">
-                            {event.title}
-                            <small className="d-block text-muted">
-                                Shared by: {event.sharedBy}
-                            </small>
-                        </div>
-                    </div>
-                ))}
-            </div>
+    <div className="container-fluid d-flex p-0">
+      <div className="body-section p-3">
+        <div className="top-section d-flex flex-wrap justify-content-between align-items-center mb-4">
+          <h3 className="mb-2 mb-md-0">Travel Itinerary Planner</h3>
+          <div className="d-flex gap-2 align-items-center">
+              <NotificationBell />
+              <button className="logout-button btn ms-3" onClick={handleLogout}>
+                  Logout
+              </button>
           </div>
         </div>
-        <div className={`calendar-main ${showEventDetails ? 'with-details' : ''}`}>
-          <Calendar
-            value={date}
-            onChange={handleDateChange}
-            className="w-100"
-            tileContent={tileContent}
-            onClickDay={(date) => setDate(date)}
-          />
+        <div className="calendar-layout">
+          <div className="calendar-sidebar">
+            <div className="sidebar-section">
+              <h5>My Events</h5>
+              <div className="sidebar-list">
+                  {allEvents.map((event) => (
+                      <div 
+                          key={event._id} 
+                          className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
+                          onClick={() => handleEventClick(event)}
+                      >
+                          <div className="event-title">{event.title}</div>
+                      </div>
+                  ))}
+              </div>
+            </div>
+            <div className="sidebar-section">
+              <h5>Shared Events</h5>
+              <div className="sidebar-list">
+                  {sharedEvents.map((event) => (
+                      <div 
+                          key={event._id} 
+                          className={`event-list-item ${selectedEventFilter === event._id ? 'selected' : ''}`}
+                          onClick={() => handleEventClick(event)}
+                      >
+                          <div className="event-title">
+                              {event.title}
+                              <small className="d-block text-muted">
+                                  Shared by: {event.sharedBy}
+                              </small>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+          <div className={`calendar-main ${showEventDetails ? 'with-details' : ''}`}>
+            <Calendar
+              value={date}
+              onChange={handleDateChange}
+              className="w-100"
+              tileContent={tileContent}
+              onClickDay={(date) => setDate(date)}
+            />
+          </div>
         </div>
       </div>
 

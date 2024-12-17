@@ -1,6 +1,19 @@
 .notification-bell {
+    display: flex;
     position: relative;
     color: #333;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.notification-bell:hover {
+    background-color: #D2E8EC;
+}
+
+.notification-bell:active {
+    background-color: transparent;
+    outline: 1px solid #4BA4B4;
 }
 
 .notification-bell .badge {
@@ -15,22 +28,21 @@
     width: 300px;
     padding: 0;
     max-height: 400px;
-}
-
-.notification-header {
-    padding: 0.5rem 1rem;
-    border-bottom: 1px solid #dee2e6;
-    background-color: #f8f9fa;
+    left: 0;
+    transform: translateX(-90%);
+    min-width: 300px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .notification-list {
     max-height: 350px;
     overflow-y: auto;
+    border-radius: 1rem;
 }
 
 .notification-item {
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #eee;
+    border: 1px solid #eee;
 }
 
 .notification-item.unread {
@@ -60,4 +72,5 @@
 
 .notification-item:hover {
     background-color: #f8f9fa;
+    border: 1px solid #eee;
 }

@@ -7,12 +7,14 @@ import Home from './Home'
 import ForgotPassword from './ForgotPassword'
 import ResetPassword from './ResetPassword'
 import ProtectedRoute from './components/ProtectedRoute'
+import LandingPage from './LandingPage'
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" />} />
+        <Route path="/" element={<Navigate to="/landingPage" />} />
+        <Route path="/landingPage" element={<LandingPage />} />
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route 
