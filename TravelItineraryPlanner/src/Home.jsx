@@ -454,28 +454,8 @@ function Home() {
 
   return (
     <div className="container-fluid d-flex p-0">
-      <div className={`sidebar p-2 ${sidebarVisible ? "active" : ""}`}>
-        <a href="" className="navbar-brand">
-          <img src="src/assets/AtlasLogo.png" alt="Atlas Logo" />
-        </a>
-        <div className="cal-sidebar">
-          <a href="/Home" className="cal-link p-2 rounded-2">
-            <BsCalendar3 size={25} className="calendar-icon" />
-          </a>
-          <p>Calendar</p>
-        </div>
-        <div className="trash-sidebar">
-          <a href="#" className="trash-link p-2 rounded-2">
-            <FiTrash2 size={25} className="trash-icon" />
-          </a>
-          <p>Trash</p>
-        </div>
-      </div>
       <div className="body-section p-3">
         <div className="top-section d-flex flex-wrap justify-content-between align-items-center mb-4">
-        <button className="sidebar-toggle p-2" onClick={toggleSidebar}>
-          {sidebarVisible ? <FaTimes size={20} /> : <FaBars size={20} />}
-        </button>
           <h3 className="mb-2 mb-md-0">Travel Itinerary Planner</h3>
           <div className="d-flex gap-2 align-items-center">
               <NotificationBell />
@@ -486,11 +466,6 @@ function Home() {
         </div>
         <div className="calendar-layout">
           <div className="calendar-sidebar">
-            <div className="sidebar-section">
-              <h5>Favorites</h5>
-              <div className="sidebar-list">
-              </div>
-            </div>
             <div className="sidebar-section">
               <h5>My Events</h5>
               <div className="sidebar-list">

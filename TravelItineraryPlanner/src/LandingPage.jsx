@@ -27,9 +27,9 @@ function App() {
             const response = await axiosInstance.post('/login', { email, password });
             if (response.data.token) {
                 console.log('JWT Token:', response.data.token);
-                console.log('Calendar ID:', response.data.user.calendarId); // Changed from calendar._id to calendarId
+                console.log('Calendar ID:', response.data.user.calendarId);
                 localStorage.setItem('token', response.data.token);
-                localStorage.setItem('calendarId', response.data.user.calendarId); // Changed from calendar._id to calendarId
+                localStorage.setItem('calendarId', response.data.user.calendarId);
                 navigate('/home');
             } else {
                 setMessage(response.data.error);
@@ -42,7 +42,6 @@ function App() {
 
     const handleSignupSubmit = (e) => {
         e.preventDefault();
-        // You can implement signup API call here
     };
 
     React.useEffect(() => {
@@ -86,7 +85,6 @@ function App() {
                 </div>
             </section>
 
-            {/* Login Modal */}
             <div className="modal fade" id="loginModal" tabIndex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">
@@ -133,7 +131,6 @@ function App() {
                 </div>
             </div>
 
-            {/* Signup Modal */}
             <div className="modal fade" id="signupModal" tabIndex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">

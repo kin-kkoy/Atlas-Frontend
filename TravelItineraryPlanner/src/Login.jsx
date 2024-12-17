@@ -8,7 +8,7 @@ function Login() {
     const [email, setEmail] = useState();
     const [password, setPassword] = useState();
     const [message, setMessage] = useState();
-    const [showPassword, setShowPassword] = useState(false); // Toggle state for password visibility
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {

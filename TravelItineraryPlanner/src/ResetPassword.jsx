@@ -15,7 +15,7 @@ function ResetPassword() {
         axiosInstance.post('http://localhost:5000/reset-password', { email, resetToken, newPassword })
             .then((response) => {
                 setMessage(response.data.message);
-                navigate('/login'); // Redirect after successful reset
+                navigate('/login');
             })
             .catch((error) => {
                 console.error(error);

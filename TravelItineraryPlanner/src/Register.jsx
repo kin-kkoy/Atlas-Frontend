@@ -30,7 +30,6 @@ function Register() {
         const passwordInput = e.target.value;
         setPassword(passwordInput);
 
-        // Check password validation conditions
         setIsLengthValid(lengthRegEx.test(passwordInput));
         setIsCharacterValid(characterRegEx.test(passwordInput));
         setIsNumberValid(numberRegEx.test(passwordInput));
@@ -113,7 +112,6 @@ function Register() {
                         </button>
                     </div>
 
-                    {/* Show Password Validation only when the password field is focused */}
                     {isFocused && (
                         <ul className="password-requirements">
                             <li style={{ color: isLengthValid ? 'green' : '#8f8f8f' }}>
