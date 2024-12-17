@@ -315,7 +315,7 @@ function Home() {
                                 className={`calendar-event-item ${getEventClass(activity)}`}
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    handleShowEventDetails(event, activity); // Pass the clicked activity
+                                    handleShowEventDetails(event, activity);
                                 }}
                                 role="button"
                                 tabIndex={0}
@@ -364,62 +364,50 @@ function Home() {
   const handleUpdateEvent = async (updatedEvent) => {
     try {
       const calendarId = localStorage.getItem("calendarId");
-      
+
       const eventPayload = {
         ...updatedEvent,
-        title: updatedEvent.title,
-        description: updatedEvent.description,
-        date: new Date(updatedEvent.date),
-        isShared: updatedEvent.isShared,
-        sharedFrom: updatedEvent.sharedFrom,
-        sharedPermission: updatedEvent.sharedPermission,
         activities: updatedEvent.activities.map(activity => ({
           ...activity,
-          startTime: new Date(activity.startTime),
-          endTime: new Date(activity.endTime)
+          startTime: activity.startTime instanceof Date 
+            ? activity.startTime.toISOString() 
+            : new Date(activity.startTime).toISOString(),
+          endTime: activity.endTime instanceof Date 
+            ? activity.endTime.toISOString() 
+            : new Date(activity.endTime).toISOString(),
+          _id: activity._id?.toString()
         }))
       };
 
       const response = await axiosInstance.put(
-        `/api/events/${calendarId}/events/${updatedEvent._id}`, 
+        `/api/events/${calendarId}/update/${updatedEvent._id}`,
         eventPayload
       );
       
-      const updatedEventData = response.data;
+      if (response.data) {
+        const updateEventInList = (events, updatedEvent) => 
+          events.map(event => 
+            event._id === updatedEvent._id ? updatedEvent : event
+          );
 
-      const updateEventInList = (events, updatedEvent) => {
-        return events.map(event => {
-          if (event._id === updatedEvent._id || 
-              (event.sharedFrom && 
-               (event.sharedFrom._id === updatedEvent._id || 
-                event.sharedFrom._id === updatedEvent.sharedFrom))) {
-            return updatedEvent;
-          }
-          return event;
-        });
-      };
+        setAllEvents(prev => updateEventInList(prev, response.data));
+        setSharedEvents(prev => updateEventInList(prev, response.data));
+        
+        const formattedDate = date.toLocaleDateString("en-CA");
+        const eventsResponse = await axiosInstance.get(
+          `/api/events/${calendarId}/by-date`,
+          { params: { date: formattedDate } }
+        );
 
-      setSharedEvents(prevEvents => updateEventInList(prevEvents, updatedEventData));
-      setAllEvents(prevEvents => updateEventInList(prevEvents, updatedEventData));
-      
-      setShowEventDetails(false);
+        setEvents(prev => ({
+          ...prev,
+          [formattedDate]: eventsResponse.data
+        }));
 
-      const formattedDate = date.toLocaleDateString("en-CA");
-      const eventsResponse = await axiosInstance.get(
-        `/api/events/${calendarId}/by-date`,
-        {
-          params: { date: formattedDate }
-        }
-      );
-
-      setEvents(prevEvents => ({
-        ...prevEvents,
-        [formattedDate]: eventsResponse.data
-      }));
-
+        setShowEventDetails(false);
+      }
     } catch (error) {
-      console.error("Error updating event:", error);
-      setError(error.response?.data?.error || "Failed to update event");
+      alert("Failed to update event: " + (error.response?.data?.error || "Unknown error"));
     }
   };
 
