@@ -18,36 +18,59 @@ function EventDetailsModal({ show, handleClose, event, handleDelete, handleUpdat
 
   if (!event) return null;
 
-  // Check if user has edit permission
   const canEdit = !event.isShared || (event.isShared && event.sharedPermission === 'edit');
   const handleEditClick = () => {
     if (!canEdit) {
-      // Show error or notification that user doesn't have edit permission
       return;
     }
     setIsEditing(true);
   };
 
   const handleSaveEdit = async () => {
-    const eventToUpdate = {
-      ...editedEvent,
-      activities: editedEvent.activities.map(activity => ({
-        ...activity,
-        startTime: new Date(activity.startTime),
-        endTime: new Date(activity.endTime)
-      }))
-    };
-    await handleUpdate(eventToUpdate);
-    setIsEditing(false);
+    if (!editedEvent) return;
+
+    try {
+      const eventToUpdate = {
+        ...editedEvent,
+        activities: editedEvent.activities.map(activity => ({
+          ...activity,
+          startTime: activity.startTime instanceof Date 
+            ? activity.startTime.toISOString() 
+            : new Date(activity.startTime).toISOString(),
+          endTime: activity.endTime instanceof Date 
+            ? activity.endTime.toISOString() 
+            : new Date(activity.endTime).toISOString(),
+          _id: activity._id?.toString()
+        }))
+      };
+
+      await handleUpdate(eventToUpdate);
+      setIsEditing(false);
+    } catch (error) {
+      alert('Failed to update event. Please try again.');
+    }
   };
 
   const handleActivityChange = (index, field, value) => {
-    setEditedEvent(prev => ({
-      ...prev,
-      activities: prev.activities.map((activity, i) => 
-        i === index ? { ...activity, [field]: value } : activity
-      )
-    }));
+    setEditedEvent(prev => {
+      if (!prev) return prev;
+      
+      const updatedActivities = [...prev.activities];
+      const activity = { ...updatedActivities[index] };
+      
+      if (field === 'startTime' || field === 'endTime') {
+        activity[field] = new Date(value).toISOString();
+      } else {
+        activity[field] = value;
+      }
+      
+      updatedActivities[index] = activity;
+
+      return {
+        ...prev,
+        activities: updatedActivities
+      };
+    });
   };
 
   const handleEventChange = (field, value) => {
@@ -110,7 +133,7 @@ function EventDetailsModal({ show, handleClose, event, handleDelete, handleUpdat
                       <Form.Label>Start Time</Form.Label>
                       <Form.Control
                         type="datetime-local"
-                        value={activity.startTime.slice(0, 16)}
+                        value={new Date(activity.startTime).toISOString().slice(0, 16)}
                         onChange={(e) => handleActivityChange(index, 'startTime', e.target.value)}
                       />
                     </Form.Group>
@@ -120,7 +143,7 @@ function EventDetailsModal({ show, handleClose, event, handleDelete, handleUpdat
                       <Form.Label>End Time</Form.Label>
                       <Form.Control
                         type="datetime-local"
-                        value={activity.endTime.slice(0, 16)}
+                        value={new Date(activity.endTime).toISOString().slice(0, 16)}
                         onChange={(e) => handleActivityChange(index, 'endTime', e.target.value)}
                       />
                     </Form.Group>
@@ -143,7 +166,6 @@ function EventDetailsModal({ show, handleClose, event, handleDelete, handleUpdat
     );
   }
 
-  // Return original view mode JSX
   return (
     <div className={`event-details-sidebar ${show ? 'show' : ''}`}>
       <div className="event-details-header">
