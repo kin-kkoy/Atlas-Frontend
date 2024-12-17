@@ -58,6 +58,9 @@ Atlas is a travel itinerary planner designed to help users effortlessly plan the
 
 ## Screenshots
 
-![Atlas Home Page]("C:\Users\gibgib\Downloads\HomePage.png")
-![Atlas Event Modal]("C:\Users\gibgib\Downloads\EventModal.png")
-![Atlas Landing Page]("C:\Users\gibgib\Downloads\LandingPage.png")
+![image](https://github.com/user-attachments/assets/29889659-b9bc-4bd6-8bc1-16bc9a78ec7a)
+![image](https://github.com/user-attachments/assets/304e650f-4c7b-4a06-9202-04b6888efdd1)
+![image](https://github.com/user-attachments/assets/c1c43aa0-0863-4686-9e41-d3bdf3540fb3)
+
+
+
